@@ -1,4 +1,4 @@
-import { suite } from '../uvb/core';
+import { suite } from '../uvb';
 import * as assert from '../uvb/assert';
 import * as diff from '../uvb/diff';
 

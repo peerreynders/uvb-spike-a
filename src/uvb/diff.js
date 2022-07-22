@@ -1,19 +1,13 @@
 import { diffArrays, diffChars, diffLines } from 'diff';
 
 /**
-   @template TOld
-   @template TNew
-   @typedef { import('./diff').DiffArrays<TOld,TNew> } DiffArrays<TOld,TNew>
-*/
-/**
-   @typedef { import('./diff').DiffLines } DiffLines
-   @typedef { import('./diff').DiffChars } DiffChars
-   @typedef { import('./diff').DiffDirect } DiffDirect
-   @typedef { import('./diff').FrameArray } FrameArray
-   @typedef { import('./diff').FrameObject } FrameObject
-*/
-
-/** @type {<TOld,TNew>(actual: TOld[], expected: TNew[]) => DiffArrays<TOld,TNew>} */
+ * Difference arrays
+ * @template TOld
+ * @template TNew
+ * @param {TOld[]} actual
+ * @param {TNew[]} expected
+ * @returns {import('./index').DiffArrays<TOld,TNew>}
+ */
 function arrays(actual, expected) {
   return {
     kind: 'arrays',
@@ -21,7 +15,13 @@ function arrays(actual, expected) {
   };
 }
 
-/** @type {(actual: string, expected: string) => DiffLines} */
+/**
+ * Difference multiline strings
+ * @param {string} actual
+ * @param {string} expected
+ * @param {number} [lineNo]
+ * @returns {import('./index').DiffLines}
+ */
 function lines(actual, expected, lineNo = 0) {
   return {
     kind: 'lines',
@@ -30,7 +30,12 @@ function lines(actual, expected, lineNo = 0) {
   };
 }
 
-/** @type {(actual: string, expected: string) => DiffChars} */
+/**
+ * Difference strings
+ * @param {string} actual
+ * @param {string} expected
+ * @returns {import('./index').DiffChars}
+ */
 function chars(actual, expected) {
   return {
     kind: 'chars',
@@ -38,7 +43,12 @@ function chars(actual, expected) {
   };
 }
 
-/** @type {(actual: unknown, expected: unknown) => DiffDirect} */
+/**
+ * Difference anything else
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @returns {import('./index').DiffDirect}
+ */
 function direct(actual, expected) {
   return {
     kind: 'direct',
@@ -51,7 +61,12 @@ function direct(actual, expected) {
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
-/** @type {(actual: object, expected: object) => FrameArray | FrameObject} */
+/**
+ * Create a 'frame of work' for `sort()`
+ * @param {object} actual
+ * @param {object} expected
+ * @returns {import('./internal').FrameArray | import('./internal').FrameObject}
+ */
 function makeFrame(actual, expected) {
   if (typeof actual !== 'object' || typeof expected !== 'object')
     throw new Error('makeFrame: non-object arguments');
@@ -88,7 +103,11 @@ function makeFrame(actual, expected) {
 // Arrays are traversed without resequencing but
 // their elements are resequenced.
 //
-/** @type {(actual: (Record<string,unknown> | unknown[]), expected: (Record<string,unknown> | unknown[])) => (Record<string,unknown> | unknown[])} */
+/**
+ * @param {Record<string,unknown> | unknown[]} actual
+ * @param {Record<string,unknown> | unknown[]} expected
+ * @returns {Record<string,unknown> | unknown[]}
+ */
 function sort(actual, expected) {
   const frames = [makeFrame(actual, expected)];
   let top = frames[0];
@@ -166,6 +185,7 @@ function sort(actual, expected) {
 
           result[key] = actual[key];
         }
+
         done = frames.pop();
       }
     }
@@ -180,7 +200,9 @@ function sort(actual, expected) {
 // so that objects with circular or multi references
 // can still be converted to text
 //
-/** @type {() => (key: string, value: unknown) => unknown} */
+/**
+ * @returns {(key: string, value: unknown) => unknown}
+ */
 function circular() {
   const refCache = new Set();
 
@@ -203,14 +225,24 @@ function circular() {
 
 // Customized JSON.stringify to genenerate a text version
 // of the `input` that can potentially be used for failure display.
-/** @type {(value: unknown) => string} */
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function stringify(value) {
   return JSON.stringify(value, circular(), 2)
     .replace(/"\[__NAN__\]"/g, 'NaN')
     .replace(/"\[__VOID__\]"/g, 'undefined');
 }
 
-/** @type {(value: unknown) => string | undefined} */
+/**
+ * Returns:
+ * - `string` representation of the non-nullish object
+ * - the `string` itself
+ * - `undefined` otherwise
+ * @param {unknown} value
+ * @returns {string | undefined}
+ */
 function toStringMaybe(value) {
   return value && typeof value === 'object'
     ? stringify(value)
@@ -219,17 +251,38 @@ function toStringMaybe(value) {
     : undefined;
 }
 
-/** @type {(preferred: string | undefined, value: unknown) => string} */
+/**
+ * Returns:
+ * - the passed preferred `string` if present
+ * - the string representation of the value passed
+ * @param {string | undefined} preferred
+ * @param {unknown} value
+ * @returns {string}
+ */
 function useString(preferred, value) {
   return preferred ? preferred : String(value);
 }
 
 /** @type {(preferred: string | undefined, value: unknown) => unknown} */
+/**
+ * Returns:
+ * - the passed preferred `string` if present
+ * - the value passed
+ * @param {string | undefined} preferred
+ * @param {unknown} value
+ * @returns {unknown}
+ */
 function preferString(preferred, value) {
   return preferred ? preferred : value;
 }
 
-/** @type {(actual: unknown, expected: unknown) => DiffArrays<unknown,unknown> | DiffLines | DiffChars | DiffDirect} */
+/**
+ * Generates a difference representation for the passed
+ * `actual` and `expected`
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @returns {import('./index').DiffArrays<unknown,unknown> | import('./index').DiffLines | import('./index').DiffChars | import('./index').DiffDirect}
+ */
 function compare(actual, expected) {
   // Generate `arrays` difference when both are arrays
   if (Array.isArray(expected) && Array.isArray(actual))
