@@ -1,5 +1,20 @@
 import { diffArrays, diffChars, diffLines } from 'diff';
 
+/**
+   @template TOld
+   @template TNew
+   @typedef { import('./diff').DiffArrays<TOld,TNew> } DiffArrays<TOld,TNew>
+*/
+/**
+   @typedef { import('./diff').DiffLines } DiffLines
+   @typedef { import('./diff').DiffChars } DiffChars
+   @typedef { import('./diff').DiffDirect } DiffDirect
+   @typedef { import('./diff').ObjectF } ObjectF
+   @typedef { import('./diff').FrameArray } FrameArray
+   @typedef { import('./diff').FrameObject } FrameObject
+*/
+
+/** @type {<TOld,TNew>(actual: TOld[], expected: TNew[]) => DiffArrays<TOld,TNew>} */
 function arrays(actual, expected) {
   return {
     kind: 'arrays',
@@ -7,6 +22,7 @@ function arrays(actual, expected) {
   };
 }
 
+/** @type {(actual: string, expected: string) => DiffLines} */
 function lines(actual, expected, lineNo = 0) {
   return {
     kind: 'lines',
@@ -15,6 +31,7 @@ function lines(actual, expected, lineNo = 0) {
   };
 }
 
+/** @type {(actual: string, expected: string) => DiffChars} */
 function chars(actual, expected) {
   return {
     kind: 'chars',
@@ -22,46 +39,47 @@ function chars(actual, expected) {
   };
 }
 
+/** @type {(actual: unknown, expected: unknown) => DiffDirect} */
 function direct(actual, expected) {
-  const actualType = typeof actual;
-  const expectedType = typeof expected;
-
   return {
     kind: 'direct',
-    actual: actualType === 'string' ? actual : String(actual),
-    actualType,
-    expected: expectedType === 'string' ? expected : String(expected),
-    expectedType,
+    actual: typeof actual === 'string' ? actual : String(actual),
+    actualType: typeof actual,
+    expected: typeof expected === 'string' ? expected : String(expected),
+    expectedType: typeof expected,
   };
 }
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
-function makeFrameArray(actual, expected) {
-  return {
-    kind: 'array',
-    result: [],
-    index: 0,
-    actual,
-    expected,
-  };
-}
+/** @type {(actual: object, expected: object) => FrameArray | FrameObject} */
+function makeFrame(actual, expected) {
+  if (typeof actual !== 'object' || typeof expected !== 'object')
+    throw new Error('makeFrame: non-object arguments');
 
-function makeFrameObject(actual, expected) {
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    return {
+      kind: 'array',
+      result: [],
+      index: 0,
+      actual,
+      expected,
+    };
+  }
+
+  if (Array.isArray(actual) || Array.isArray(expected))
+    throw new Error('makeFrame: mismatched argument types');
+
   return {
     kind: 'object',
     result: {},
     index: 0,
     keys: Object.keys(expected),
-    actual,
-    expected,
+    // prettier-ignore
+    actual: /** @type {ObjectF} */(actual),
+    // prettier-ignore
+    expected: /** @type {ObjectF} */(expected),
   };
-}
-
-function makeFrame(actual, expected) {
-  return Array.isArray(actual)
-    ? makeFrameArray(actual, expected)
-    : makeFrameObject(actual, expected);
 }
 
 // `sort` returns a `result` where the key/value entries
@@ -71,6 +89,7 @@ function makeFrame(actual, expected) {
 // Arrays are traversed without resequencing but
 // their elements are are resequenced.
 //
+/** @type {(actual: (ObjectF | unknown[]), expected: (ObjectF | unknown[])) => (ObjectF | unknown[])} */
 function sort(actual, expected) {
   const frames = [makeFrame(actual, expected)];
   let top = frames[0];
@@ -109,7 +128,8 @@ function sort(actual, expected) {
         }
 
         // Waiting for a resequenced element
-        frames.push(makeFrame(value, expected[top.index]));
+        // prettier-ignore
+        frames.push(makeFrame(value, /** @type {object} */(expected[top.index])));
         waiting = true;
         break;
       }
@@ -134,7 +154,8 @@ function sort(actual, expected) {
         }
 
         // Waiting for a resequenced value
-        frames.push(makeFrame(value, expected[key]));
+        // prettier-ignore
+        frames.push(makeFrame(value, /** @type {object} */(expected[key])));
         waiting = true;
         break;
       }
@@ -150,6 +171,8 @@ function sort(actual, expected) {
       }
     }
   } while (frames.length > 0);
+
+  if (!done) throw new Error('sort: no result (done)');
 
   return done.result;
 }
@@ -253,3 +276,6 @@ function compare(actual, expected) {
 }
 
 export { arrays, chars, circular, compare, direct, lines, stringify, sort };
+
+
+// export { arrays, chars, direct, lines, sort };
