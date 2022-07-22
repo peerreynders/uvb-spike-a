@@ -41,6 +41,8 @@ function assert(
 }
 
 function equal(actual, expected, message) {
+  if (actual === null)
+    console.log('EQUAL', actual, expected, dequal(actual, expected));
   assert(
     dequal(actual, expected),
     actual,

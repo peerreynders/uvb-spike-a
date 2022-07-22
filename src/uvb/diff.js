@@ -9,7 +9,6 @@ import { diffArrays, diffChars, diffLines } from 'diff';
    @typedef { import('./diff').DiffLines } DiffLines
    @typedef { import('./diff').DiffChars } DiffChars
    @typedef { import('./diff').DiffDirect } DiffDirect
-   @typedef { import('./diff').ObjectF } ObjectF
    @typedef { import('./diff').FrameArray } FrameArray
    @typedef { import('./diff').FrameObject } FrameObject
 */
@@ -57,7 +56,10 @@ function makeFrame(actual, expected) {
   if (typeof actual !== 'object' || typeof expected !== 'object')
     throw new Error('makeFrame: non-object arguments');
 
-  if (Array.isArray(actual) && Array.isArray(expected)) {
+  if (
+    Array.isArray(actual) &&
+    (Array.isArray(expected) || expected == undefined)
+  ) {
     return {
       kind: 'array',
       result: [],
@@ -67,18 +69,15 @@ function makeFrame(actual, expected) {
     };
   }
 
-  if (Array.isArray(actual) || Array.isArray(expected))
-    throw new Error('makeFrame: mismatched argument types');
-
   return {
     kind: 'object',
     result: {},
     index: 0,
     keys: Object.keys(expected),
     // prettier-ignore
-    actual: /** @type {ObjectF} */(actual),
+    actual: /** @type {Record<string,unknown>} */(actual),
     // prettier-ignore
-    expected: /** @type {ObjectF} */(expected),
+    expected: /** @type {Record<string,unknown>} */(expected),
   };
 }
 
@@ -87,9 +86,9 @@ function makeFrame(actual, expected) {
 // based on the order found in `expected` with the
 // rest added to the end.
 // Arrays are traversed without resequencing but
-// their elements are are resequenced.
+// their elements are resequenced.
 //
-/** @type {(actual: (ObjectF | unknown[]), expected: (ObjectF | unknown[])) => (ObjectF | unknown[])} */
+/** @type {(actual: (Record<string,unknown> | unknown[]), expected: (Record<string,unknown> | unknown[])) => (Record<string,unknown> | unknown[])} */
 function sort(actual, expected) {
   const frames = [makeFrame(actual, expected)];
   let top = frames[0];
@@ -181,18 +180,18 @@ function sort(actual, expected) {
 // so that objects with circular or multi references
 // can still be converted to text
 //
+/** @type {() => (key: string, value: unknown) => unknown} */
 function circular() {
   const refCache = new Set();
 
-  return function print(key, value) {
+  return function print(_key, value) {
     if (value === void 0) return '[__VOID__]';
 
-    const typeofValue = typeof value;
-    if (typeofValue === 'number' && value !== value) return '[__NAN__]';
+    if (typeof value === 'number' && value !== value) return '[__NAN__]';
 
-    if (typeofValue === 'bigint') return value.toString();
+    if (typeof value === 'bigint') return value.toString();
 
-    if (!value || typeofValue !== 'object') return value;
+    if (!value || typeof value !== 'object') return value;
 
     // 'seen before' potentially circular
     if (refCache.has(value)) return '[Circular]';
@@ -204,28 +203,33 @@ function circular() {
 
 // Customized JSON.stringify to genenerate a text version
 // of the `input` that can potentially be used for failure display.
-function stringify(input) {
-  return JSON.stringify(input, circular(), 2)
+/** @type {(value: unknown) => string} */
+function stringify(value) {
+  return JSON.stringify(value, circular(), 2)
     .replace(/"\[__NAN__\]"/g, 'NaN')
     .replace(/"\[__VOID__\]"/g, 'undefined');
 }
 
-function toStringMaybe(value, typeofValue) {
-  return typeofValue === 'object'
+/** @type {(value: unknown) => string | undefined} */
+function toStringMaybe(value) {
+  return value && typeof value === 'object'
     ? stringify(value)
-    : typeofValue === 'string'
+    : typeof value === 'string'
     ? value
     : undefined;
 }
 
+/** @type {(preferred: string | undefined, value: unknown) => string} */
 function useString(preferred, value) {
   return preferred ? preferred : String(value);
 }
 
+/** @type {(preferred: string | undefined, value: unknown) => unknown} */
 function preferString(preferred, value) {
   return preferred ? preferred : value;
 }
 
+/** @type {(actual: unknown, expected: unknown) => DiffArrays<unknown,unknown> | DiffLines | DiffChars | DiffDirect} */
 function compare(actual, expected) {
   // Generate `arrays` difference when both are arrays
   if (Array.isArray(expected) && Array.isArray(actual))
@@ -240,15 +244,20 @@ function compare(actual, expected) {
   // Use string representations for
   // 'object' and of course 'string' entities
   // Leave the others alone
-  const typeofActual = actual && typeof actual;
-  const typeofExpected = expected && typeof expected;
 
   // For `actual` sort entries according to `expected` order first
+  // prettier-ignore
   const actualString =
-    typeofActual === 'object' && typeofExpected === 'object'
-      ? stringify(sort(actual, expected))
-      : toStringMaybe(actual, typeofActual);
-  const expectedString = toStringMaybe(expected, typeofExpected);
+        (actual && typeof actual === 'object')
+        && (expected && typeof expected === 'object')
+        ? stringify(
+          sort(
+            /** @type {unknown[] | Record<string, unknown>} */(actual),
+            /** @type {unknown[] | Record<string, unknown>} */(expected)
+          )
+        )
+      : toStringMaybe(actual);
+  const expectedString = toStringMaybe(expected);
 
   // if `actual` was converted to a multi-line string
   // use `lines` difference
@@ -276,6 +285,3 @@ function compare(actual, expected) {
 }
 
 export { arrays, chars, circular, compare, direct, lines, stringify, sort };
-
-
-// export { arrays, chars, direct, lines, sort };

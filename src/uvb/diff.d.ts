@@ -32,17 +32,13 @@ type FrameArray = {
   expected: unknown[];
 };
 
-type ObjectF = {
-  [key: string]: unknown;
-};
-
 type FrameObject = {
   kind: 'object';
-  result: ObjectF;
+  result: Record<string, unknown>;
   index: number;
   keys: string[];
-  actual: ObjectF;
-  expected: ObjectF;
+  actual: Record<string, unknown>;
+  expected: Record<string, unknown>;
 };
 
 export type {
@@ -50,7 +46,6 @@ export type {
   DiffLines,
   DiffChars,
   DiffDirect,
-  ObjectF,
   FrameArray,
   FrameObject,
 };
