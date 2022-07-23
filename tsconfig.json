@@ -20,6 +20,7 @@
   },
   "include": [],
   "files": [
-    "src/uvb/diff.js"
+    "src/uvb/diff.js",
+    "src/uvb/assert.js"
   ]
 }

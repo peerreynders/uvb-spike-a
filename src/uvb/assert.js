@@ -2,13 +2,18 @@ import { dequal } from 'dequal';
 import { compare } from './diff';
 
 class Assertion extends Error {
+  /**
+   * @param {import('.').AssertionOptions} options
+   */
   constructor(options) {
     super(options.message);
     this.name = 'Assertion';
     this.code = 'ERR_ASSERTION';
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+
+    // prettier-ignore
+    const cons =
+      /** @type{import('./internal').ErrorConstructor} */ (/** @type{unknown} */ (Error));
+    cons.captureStackTrace?.(this, this.constructor);
 
     this.details = options.details;
     this.generated = options.generated;
@@ -18,6 +23,18 @@ class Assertion extends Error {
   }
 }
 
+/**
+ * Builds `Assertion` with the specified properties
+ * and throws it if assertion failed
+ * @param {boolean} assertion `false` throw; otherwise let is pass.
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string} operator
+ * @param {((actual: unknown, expected: unknown) => unknown) | undefined} detailer
+ * Function to generate details about the differences between `actual` and `expected`
+ * @param {string} backup  generated message.
+ * @param {string | Error} [message] Optional: custom message or custom Error to throw
+ */
 function assert(
   assertion,
   actual,
@@ -40,9 +57,13 @@ function assert(
   });
 }
 
+/**
+ * Structural equality
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string | Error} [message]
+ */
 function equal(actual, expected, message) {
-  if (actual === null)
-    console.log('EQUAL', actual, expected, dequal(actual, expected));
   assert(
     dequal(actual, expected),
     actual,
@@ -54,6 +75,12 @@ function equal(actual, expected, message) {
   );
 }
 
+/**
+ * Structural inequality
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string | Error} [message]
+ */
 function notEqual(actual, expected, message) {
   assert(
     !dequal(actual, expected),
@@ -67,6 +94,12 @@ function notEqual(actual, expected, message) {
 }
 
 // --- begin `instance`
+/**
+ * `actual` instanceof `expected`
+ * @param {unknown} actual
+ * @param {Function} expected
+ * @param {string | Error} [message]
+ */
 function instance(actual, expected, message) {
   assert(
     actual instanceof expected,
@@ -81,6 +114,12 @@ function instance(actual, expected, message) {
   );
 }
 
+/**
+ * `actual` not instanceof `expected`
+ * @param {unknown} actual
+ * @param {Function} expected
+ * @param {string | Error} [message]
+ */
 function notInstance(actual, expected, message) {
   assert(
     !(actual instanceof expected),
@@ -97,6 +136,12 @@ function notInstance(actual, expected, message) {
 // --- end `instance`
 
 // --- begin `is`
+/**
+ * Referential equality
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string | Error} [message]
+ */
 function is(actual, expected, message) {
   assert(
     actual === expected,
@@ -109,6 +154,12 @@ function is(actual, expected, message) {
   );
 }
 
+/**
+ * Referential inequality
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string | Error} [message]
+ */
 function isNot(actual, expected, message) {
   assert(
     actual !== expected,
@@ -125,6 +176,12 @@ is.not = isNot;
 // --- end `is`
 
 // ---  begin `match`
+/**
+ * Match substring or regular expression
+ * @param {string} actual
+ * @param {string | RegExp} expected
+ * @param {string | Error} [message]
+ */
 function match(actual, expected, message) {
   if (typeof expected === 'string') {
     assert(
@@ -149,6 +206,12 @@ function match(actual, expected, message) {
   }
 }
 
+/**
+ * Don't match substring or regular expression
+ * @param {string} actual
+ * @param {string | RegExp} expected
+ * @param {string | Error} [message]
+ */
 function notMatch(actual, expected, message) {
   if (typeof expected === 'string') {
     assert(
@@ -175,7 +238,11 @@ function notMatch(actual, expected, message) {
 // --- end `match`
 
 // --- `not` pushed to the end
-
+/**
+ * Is truthy
+ * @param {unknown} actual
+ * @param {string | Error} [message]
+ */
 function ok(actual, message) {
   const assertion = Boolean(actual);
   assert(
@@ -190,10 +257,22 @@ function ok(actual, message) {
 }
 
 // --- begin `throws`
+
+/**
+ * @param {boolean} assertion
+ * @param {string} backup
+ * @param {string | Error} [message]
+ */
 function throwsAssert(assertion, backup, message) {
   assert(assertion, false, true, 'throws', undefined, backup, message);
 }
 
+/**
+ * Function expression throws
+ * @param {() => void} fn
+ * @param {string | ((error: Error) => boolean) | RegExp} expected
+ * @param {string | Error} [message]
+ */
 function throws(fn, expected, message) {
   const msg = !message && typeof expected === 'string' ? expected : message;
   try {
@@ -202,7 +281,7 @@ function throws(fn, expected, message) {
   } catch (error) {
     if (error instanceof Assertion) throw error;
 
-    if (typeof expected === 'function') {
+    if (typeof expected === 'function' && error instanceof Error) {
       throwsAssert(
         expected(error),
         'Expected function to throw matching exception',
@@ -211,7 +290,7 @@ function throws(fn, expected, message) {
       return;
     }
 
-    if (expected instanceof RegExp) {
+    if (expected instanceof RegExp && error instanceof Error) {
       throwsAssert(
         expected.test(error.message),
         `Expected function to throw exception matching \`${String(
@@ -224,17 +303,28 @@ function throws(fn, expected, message) {
   }
 }
 
+/**
+ * @param {boolean} assertion
+ * @param {string} backup
+ * @param {string | Error} [message]
+ */
 function notThrowsAssert(assertion, backup, message) {
   assert(assertion, true, false, 'not.throws', undefined, backup, message);
 }
 
+/**
+ * Function expression does not throw
+ * @param {() => void} fn
+ * @param {((error: Error) => boolean) | RegExp} expected
+ * @param {string | Error} [message]
+ */
 function notThrows(fn, expected, message) {
   const msg = !message && typeof expected === 'string' ? expected : message;
 
   try {
     fn();
   } catch (error) {
-    if (typeof expected === 'function') {
+    if (typeof expected === 'function' && error instanceof Error) {
       notThrowsAssert(
         !expected(error),
         'Expected function not to throw matching exception',
@@ -243,7 +333,7 @@ function notThrows(fn, expected, message) {
       return;
     }
 
-    if (expected instanceof RegExp) {
+    if (expected instanceof RegExp && error instanceof Error) {
       notThrowsAssert(
         !expected.test(error.message),
         `Expected function not to throw exception matching \`${String(
@@ -263,6 +353,13 @@ function notThrows(fn, expected, message) {
 // --- end `throws`
 
 // --- begin `type`
+
+/**
+ * Expected type
+ * @param {unknown} actual
+ * @param {import('./internal').TypeofType} expected
+ * @param {string | Error} [message]
+ */
 function type(actual, expected, message) {
   const typeActual = typeof actual;
   assert(
@@ -276,6 +373,12 @@ function type(actual, expected, message) {
   );
 }
 
+/**
+ * Not the specified type
+ * @param {unknown} actual
+ * @param {import('./internal').TypeofType} expected
+ * @param {string | Error} [message]
+ */
 function notType(actual, expected, message) {
   const typeActual = typeof actual;
   assert(
@@ -290,6 +393,10 @@ function notType(actual, expected, message) {
 }
 // --- end `type`
 
+/**
+ * Throws Assertion if invoked
+ * @param {string | Error} [message]
+ */
 function unreachable(message) {
   assert(
     false,
@@ -303,6 +410,11 @@ function unreachable(message) {
 }
 
 // --- begin `not`
+/**
+ * Is falsy
+ * @param {unknown} actual
+ * @param {string | Error} [message]
+ */
 function not(actual, message) {
   assert(
     !actual,

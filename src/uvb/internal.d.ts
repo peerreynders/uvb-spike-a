@@ -14,3 +14,19 @@ export type FrameObject = {
   actual: Record<string, unknown>;
   expected: Record<string, unknown>;
 };
+
+// Only supported under V8
+//
+export interface ErrorConstructor {
+  captureStackTrace(thisArg: any, func: any): void;
+}
+
+export type TypeofType =
+  | 'string'
+  | 'number'
+  | 'bigint'
+  | 'boolean'
+  | 'symbol'
+  | 'undefined'
+  | 'object'
+  | 'function';
