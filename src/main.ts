@@ -4,19 +4,19 @@ import { all as allDiff } from './tests/diff';
 
 const testReporter = (function () {
   return {
-    groupStart,
-    groupResult,
+    suiteStart,
+    suiteResult,
     testPass,
     testFail,
     result,
   };
 
-  function groupStart(name) {
-    console.log('groupStart', name);
+  function suiteStart(name) {
+    console.log('suiteStart', name);
   }
 
-  function groupResult(errors, selected, done, skipped) {
-    console.log('groupResult', errors, selected, done, skipped);
+  function suiteResult(errors, selected, done, skipped) {
+    console.log('suiteResult', errors, selected, done, skipped);
   }
 
   function testPass() {

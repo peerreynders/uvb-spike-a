@@ -1,5 +1,51 @@
 import type { ArrayChange, Change } from 'diff';
-import type { TypeofType } from './internal';
+import type {
+  Handler,
+  GroupErrors,
+  Reporter,
+  EndResult,
+  TypeofType,
+} from './internal';
+
+// suite
+export import Handler = Handler;
+
+export type RegisterHook<U extends object = {}> = (handler: Handler<U>) => void;
+export type RegisterHookTop<U extends object = {}> = {
+  (handler: Handler<U>): void;
+  each: RegisterHook<U>;
+};
+export type RegisterTest<U extends object = {}> = (
+  name: string,
+  handler: Handler<U>
+) => void;
+export type RegisterSkip<U extends object = {}> = (
+  _name?: string,
+  _handler?: Handler<U>
+) => void;
+
+export type Suite<U extends object = {}> = {
+  (name: string, handler: Handler<U>): void;
+  only: RegisterTest<U>;
+  skip: RegisterSkip<U>;
+  before: RegisterHookTop<U>;
+  after: RegisterHookTop<U>;
+  run: () => void;
+};
+
+export function configure(reporter: Reporter, options?: ReporterOptions);
+export function suite<U extends object = {}>(name?: string, userContext?: U);
+
+// run/reporter
+export import EndResult = EndResult;
+
+export import GroupErrors = GroupErrors;
+
+export import Reporter = Reporter;
+
+export type ReporterOptions = {
+  bail?: boolean;
+};
 
 // --- assert
 export type AssertionOptions = {
