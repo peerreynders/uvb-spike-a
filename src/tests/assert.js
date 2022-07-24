@@ -1,21 +1,35 @@
 import { suite } from '../uvb';
 import * as assert from '../uvb/assert';
 
-function isError(error, actual, expected, operator, message, details) {
-  assert.instance(error, Error);
+/**
+ * @param {unknown} err
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string} operator
+ * @param {string | undefined} message
+ * @param {unknown} details
+ */
+function isError(err, actual, expected, operator, message, details) {
+  assert.instance(err, Error);
+
+  // prettier-ignore
+  const error = /** @type {Error} */(err);
   if (message) assert.is(error.message, message, '~> message');
-  assert.is(error.generated, !message, '~> generated');
   assert.ok(error.stack, '~> stack');
 
   assert.instance(error, assert.Assertion);
-  assert.is(error.name, 'Assertion');
-  assert.is(error.code, 'ERR_ASSERTION');
-  assert.equal(error.details, details, '~> details');
-  assert.is(error.operator, operator, '~> operator');
-  assert.equal(error.expected, expected, '~> expected');
-  assert.equal(error.actual, actual, '~> actual');
+  // prettier-ignore
+  const assertion = /** @type {assert.Assertion} */(error);
+  assert.is(assertion.name, 'Assertion');
+  assert.is(assertion.code, 'ERR_ASSERTION');
+  assert.equal(assertion.details, details, '~> details');
+  assert.is(assertion.operator, operator, '~> operator');
+  assert.equal(assertion.expected, expected, '~> expected');
+  assert.equal(assertion.actual, actual, '~> actual');
+  assert.is(assertion.generated, !message, '~> generated');
 }
 
+/** @type {(() => void)[]} */
 const suiteRuns = [];
 
 const Assertion = suite('Assertion');
@@ -467,7 +481,8 @@ throws('should throw if function does not throw Error :: generic', () => {
   try {
     assert.throws(() => 123);
   } catch (error) {
-    assert.is(error.message, 'Expected function to throw');
+    const actual = error instanceof Error ? error.message : undefined;
+    assert.is(actual, 'Expected function to throw');
     isError(error, false, true, 'throws', '', undefined);
   }
 });
@@ -480,8 +495,9 @@ throws(
         throw new Error('hello');
       }, /world/);
     } catch (error) {
+      const actual = error instanceof Error ? error.message : undefined;
       assert.is(
-        error.message,
+        actual,
         'Expected function to throw exception matching `/world/` pattern'
       );
       isError(error, false, true, 'throws', '', undefined);
@@ -500,7 +516,8 @@ throws(
         (error) => error.message.includes('foobar')
       );
     } catch (error) {
-      assert.is(error.message, 'Expected function to throw matching exception');
+      const actual = error instanceof Error ? error.message : undefined;
+      assert.is(actual, 'Expected function to throw matching exception');
       isError(error, false, true, 'throws', '', undefined);
     }
   }
@@ -545,12 +562,20 @@ suiteRuns.push(throws.run);
 
 const not = suite('not');
 
+/**
+ * @param {(name: string, handler: () => void) => void} suite
+ * @param {(actual: unknown, message?: string | Error)=> void} notFn
+ */
 function notIsFunction(suite, notFn) {
   suite('should be a function', () => {
     assert.type(notFn, 'function');
   });
 }
 
+/**
+ * @param {(name: string, handler: () => void) => void} suite
+ * @param {(actual: unknown, message?: string | Error)=> void} notFn
+ */
 function notNoThrow(suite, notFn) {
   suite('should not throw if falsey', () => {
     assert.not.throws(() => notFn(false));
@@ -561,6 +586,10 @@ function notNoThrow(suite, notFn) {
   });
 }
 
+/**
+ * @param {(name: string, handler: () => void) => void} suite
+ * @param {(actual: unknown, message?: string | Error)=> void} notFn
+ */
 function notDoThrow(suite, notFn) {
   suite('should throw if truthy', () => {
     try {
@@ -571,6 +600,10 @@ function notDoThrow(suite, notFn) {
   });
 }
 
+/**
+ * @param {(name: string, handler: () => void) => void} suite
+ * @param {(actual: unknown, message?: string | Error)=> void} notFn
+ */
 function notDoThrowCustom(suite, notFn) {
   suite('should throw with custom message', () => {
     try {
@@ -709,7 +742,11 @@ notEqual('should use deep equality checks', () => {
     assert.unreachable();
   } catch (error) {
     assert.instance(error, assert.Assertion);
-    assert.is(error.operator, 'not.equal');
+    // prettier-ignore
+    assert.is(
+      /** @type {assert.Assertion} */(error).operator,
+      'not.equal'
+    );
   }
 
   try {
@@ -717,7 +754,11 @@ notEqual('should use deep equality checks', () => {
     assert.unreachable();
   } catch (error) {
     assert.instance(error, assert.Assertion);
-    assert.is(error.operator, 'not.equal');
+    // prettier-ignore
+    assert.is(
+      /** @type {assert.Assertion} */(error).operator,
+      'not.equal'
+    );
   }
 });
 
@@ -932,7 +973,8 @@ notThrows('should throw if function does throw Error :: generic', () => {
       throw new Error();
     });
   } catch (error) {
-    assert.is(error.message, 'Expected function not to throw');
+    const actual = error instanceof Error ? error.message : undefined;
+    assert.is(actual, 'Expected function not to throw');
     isError(error, true, false, 'not.throws', '', undefined);
   }
 });
@@ -945,8 +987,9 @@ notThrows(
         throw new Error('hello');
       }, /hello/);
     } catch (error) {
+      const actual = error instanceof Error ? error.message : undefined;
       assert.is(
-        error.message,
+        actual,
         'Expected function not to throw exception matching `/hello/` pattern'
       );
       isError(error, true, false, 'not.throws', '', undefined);
@@ -965,10 +1008,8 @@ notThrows(
         (err) => err instanceof Error
       );
     } catch (error) {
-      assert.is(
-        error.message,
-        'Expected function not to throw matching exception'
-      );
+      const actual = error instanceof Error ? error.message : undefined;
+      assert.is(actual, 'Expected function not to throw matching exception');
       isError(error, true, false, 'not.throws', '', undefined);
     }
   }

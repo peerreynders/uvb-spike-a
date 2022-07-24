@@ -104,9 +104,9 @@ function makeFrame(actual, expected) {
 // their elements are resequenced.
 //
 /**
- * @param {Record<string,unknown> | unknown[]} actual
- * @param {Record<string,unknown> | unknown[]} expected
- * @returns {Record<string,unknown> | unknown[]}
+ * @param {object | unknown[]} actual
+ * @param {object | unknown[]} expected
+ * @returns {object | unknown[]}
  */
 function sort(actual, expected) {
   const frames = [makeFrame(actual, expected)];

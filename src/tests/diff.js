@@ -2,6 +2,7 @@ import { suite } from '../uvb';
 import * as assert from '../uvb/assert';
 import * as diff from '../uvb/diff';
 
+/** @type {(() => void)[]} */
 const suiteRuns = [];
 
 const arrays = suite('arrays');
@@ -1546,6 +1547,12 @@ circular('should retain `undefined` and `NaN` values', () => {
 circular(
   'should replace circular references with "[Circular]" :: Object',
   () => {
+    /** @type {{
+     *    a: number,
+     *    b: number,
+     *    self?: object,
+     *  }}
+     */
     const input = { a: 1, b: 2 };
     input.self = input;
 
@@ -1569,6 +1576,12 @@ circular(
 circular(
   'should replace circular references with "[Circular]" :: Array',
   () => {
+    /** @type {{
+     *    a: number,
+     *    b: number,
+     *    self?: object,
+     *  }}
+     */
     const input = { a: 1, b: 2 };
     input.self = input;
 
@@ -1616,7 +1629,7 @@ stringify('should retain `undefined` and `NaN` values :: Array', () => {
   );
 });
 
-const bigIntOk = () => {
+const bigIntOk = (() => {
   if (BigInt === undefined) return false;
 
   try {
@@ -1627,7 +1640,7 @@ const bigIntOk = () => {
   }
 
   return false;
-};
+})();
 
 if (bigIntOk) {
   // Not currently supporting :: Object(BigInt(3)) && Object(4n)

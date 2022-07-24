@@ -50,21 +50,21 @@ export type ReporterOptions = {
 // --- assert
 export type AssertionOptions = {
   message?: string;
-  details: unknown;
-  generated: boolean;
-  operator: string;
-  expected: unknown;
-  actual: unknown;
+  details?: unknown;
+  generated?: boolean;
+  operator?: string;
+  expected?: unknown;
+  actual?: unknown;
 };
 
 export class Assertion extends Error {
   constructor(options: AssertionOptions);
   code: string;
-  details: unknown;
-  generated: boolean;
-  operator: string;
-  expected: unknown;
-  actual: unknown;
+  details?: unknown;
+  generated?: boolean;
+  operator?: string;
+  expected?: unknown;
+  actual?: unknown;
 }
 
 export function equal(
@@ -124,7 +124,7 @@ declare module not {
 
   function throws(
     fn: () => void,
-    expected: ((error: Error) => boolean) | RegExp,
+    expected?: ((error: Error) => boolean) | RegExp,
     message?: string | Error
   ): void;
 
@@ -139,7 +139,7 @@ export function ok(actual: unknown, message?: string | Error): void;
 
 export function throws(
   fn: () => void,
-  expected: string | ((error: Error) => boolean) | RegExp,
+  expected?: string | ((error: Error) => boolean) | RegExp,
   message?: string | Error
 ): void;
 

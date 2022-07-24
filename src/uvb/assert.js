@@ -270,7 +270,7 @@ function throwsAssert(assertion, backup, message) {
 /**
  * Function expression throws
  * @param {() => void} fn
- * @param {string | ((error: Error) => boolean) | RegExp} expected
+ * @param {string | ((error: Error) => boolean) | RegExp} [expected]
  * @param {string | Error} [message]
  */
 function throws(fn, expected, message) {
@@ -315,7 +315,7 @@ function notThrowsAssert(assertion, backup, message) {
 /**
  * Function expression does not throw
  * @param {() => void} fn
- * @param {((error: Error) => boolean) | RegExp} expected
+ * @param {((error: Error) => boolean) | RegExp} [expected]
  * @param {string | Error} [message]
  */
 function notThrows(fn, expected, message) {
