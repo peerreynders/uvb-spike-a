@@ -10,21 +10,23 @@ import type {
 // suite
 export import Handler = Handler;
 
-export type RegisterHook<U extends object = {}> = (handler: Handler<U>) => void;
-export type RegisterHookTop<U extends object = {}> = {
+export type RegisterHook<U extends object = Record<string, never>> = (
+  handler: Handler<U>
+) => void;
+export type RegisterHookTop<U extends object = Record<string, never>> = {
   (handler: Handler<U>): void;
   each: RegisterHook<U>;
 };
-export type RegisterTest<U extends object = {}> = (
+export type RegisterTest<U extends object = Record<string, never>> = (
   name: string,
   handler: Handler<U>
 ) => void;
-export type RegisterSkip<U extends object = {}> = (
+export type RegisterSkip<U extends object = Record<string, never>> = (
   _name?: string,
   _handler?: Handler<U>
 ) => void;
 
-export type Suite<U extends object = {}> = {
+export type Suite<U extends object = Record<string, never>> = {
   (name: string, handler: Handler<U>): void;
   only: RegisterTest<U>;
   skip: RegisterSkip<U>;
@@ -34,7 +36,10 @@ export type Suite<U extends object = {}> = {
 };
 
 export function configure(reporter: Reporter, options?: ReporterOptions);
-export function suite<U extends object = {}>(name?: string, userContext?: U);
+export function suite<U extends object = Record<string, never>>(
+  name?: string,
+  userContext?: U
+);
 
 // run/reporter
 export import EndResult = EndResult;
@@ -75,6 +80,7 @@ export function equal(
 
 export function instance(
   actual: unknown,
+  // eslint-disable-next-line @typescript-eslint/ban-types
   expected: Function,
   message?: string | Error
 ): void;
@@ -85,7 +91,7 @@ export function is(
   message?: string | Error
 ): void;
 
-declare module is {
+declare namespace is {
   function not(
     actual: unknown,
     expected: unknown,
@@ -101,7 +107,7 @@ export function match(
 
 export function not(actual: unknown, message?: string | Error): void;
 
-declare module not {
+declare namespace not {
   function equal(
     actual: unknown,
     expected: unknown,
@@ -110,6 +116,7 @@ declare module not {
 
   function instance(
     actual: unknown,
+    // eslint-disable-next-line @typescript-eslint/ban-types
     expected: Function,
     message?: string | Error
   ): void;

@@ -1525,7 +1525,7 @@ suiteRuns.push(sort.run);
 const circular = suite('circular');
 
 circular('should ignore non-object values', () => {
-  const input = { a: 1, b: 2, c: 'c', d: null, e: () => {} };
+  const input = { a: 1, b: 2, c: 'c', d: null, e: () => false };
 
   assert.is(
     JSON.stringify(input, diff.circular()),
@@ -1609,7 +1609,7 @@ suiteRuns.push(circular.run);
 const stringify = suite('stringify');
 
 stringify('should wrap `JSON.stringify` native', () => {
-  const input = { a: 1, b: 2, c: 'c', d: null, e: () => {} };
+  const input = { a: 1, b: 2, c: 'c', d: null, e: () => false };
 
   assert.is(diff.stringify(input), JSON.stringify(input, null, 2));
 });
@@ -1623,8 +1623,10 @@ stringify('should retain `undefined` and `NaN` values :: Object', () => {
 
 // In ES6, array holes are treated like `undefined` values
 stringify('should retain `undefined` and `NaN` values :: Array', () => {
+  // eslint-disable-next-line no-sparse-arrays
+  const input = [1, undefined, 2, , 3, NaN, 4, 5];
   assert.is(
-    diff.stringify([1, undefined, 2, , 3, NaN, 4, 5]),
+    diff.stringify(input),
     '[\n  1,\n  undefined,\n  2,\n  undefined,\n  3,\n  NaN,\n  4,\n  5\n]'
   );
 });
@@ -1638,8 +1640,6 @@ const bigIntOk = (() => {
   } catch (_e) {
     return false;
   }
-
-  return false;
 })();
 
 if (bigIntOk) {
@@ -1753,13 +1753,13 @@ compare('should proxy `$.lines` for Object inputs', () => {
         count: 1,
         added: undefined,
         removed: true,
-        value: `  "foo": 1\n`,
+        value: '  "foo": 1\n',
       },
       {
         count: 2,
         added: true,
         removed: undefined,
-        value: `  "foo": 2,\n  "bar": 3\n`,
+        value: '  "foo": 2,\n  "bar": 3\n',
       },
       {
         count: 1,
@@ -1780,13 +1780,13 @@ compare('should proxy `$.lines` for Object inputs', () => {
         count: 2,
         added: undefined,
         removed: true,
-        value: `  "foo": 2,\n  "bar": 3\n`,
+        value: '  "foo": 2,\n  "bar": 3\n',
       },
       {
         count: 1,
         added: true,
         removed: undefined,
-        value: `  "foo": 1\n`,
+        value: '  "foo": 1\n',
       },
       {
         count: 1,
@@ -1809,13 +1809,13 @@ compare('should proxy `$.lines` for Object inputs', () => {
           count: 3,
           added: undefined,
           removed: true,
-          value: `  "foo": 2,\n  "bar": undefined,\n  "baz": NaN\n`,
+          value: '  "foo": 2,\n  "bar": undefined,\n  "baz": NaN\n',
         },
         {
           count: 2,
           added: true,
           removed: undefined,
-          value: `  "foo": 1,\n  "bar": null\n`,
+          value: '  "foo": 1,\n  "bar": null\n',
         },
         {
           count: 1,
@@ -1842,13 +1842,13 @@ compare('should proxy `$.lines` for Object inputs', () => {
           count: 1,
           added: undefined,
           removed: true,
-          value: `  "bar": null,\n`,
+          value: '  "bar": null,\n',
         },
         {
           count: 1,
           added: true,
           removed: undefined,
-          value: `  "bar": undefined,\n`,
+          value: '  "bar": undefined,\n',
         },
         {
           count: 2,

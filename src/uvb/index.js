@@ -14,7 +14,7 @@ function noEntries(maybeObject) {
 /**
  * Create/merge the user context
  * with suite context state
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {string} name Suite name
  * @param {U} [userCtx]
  * @returns {import('./internal').State<U>}
@@ -41,7 +41,7 @@ function state(name, userCtx) {
  * Factory for the core structure of a suite
  * Confusingly `state` is also the user context passed
  * to the test/hook
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').State<U>} state
  * @returns {import('./internal').Context<U>}
  */
@@ -60,7 +60,7 @@ function context(state) {
 
 /**
  * Runs a single suite run
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').Context<U>} ctx
  * @param {string} suiteName
  * @param {import('./internal').Reporter} reporter
@@ -94,12 +94,11 @@ async function runner(ctx, suiteName, reporter) {
   } finally {
     state.__test__ = '';
     for (const hook of after) await hook(state);
-
-    const skipped = ctx.skipped + (only.length ? tests.length : 0);
-    const selected = entries.length;
-    reporter.suiteResult(errors, selected, done, skipped);
-    return [done, skipped, selected, errors.length > 0];
   }
+  const skipped = ctx.skipped + (only.length ? tests.length : 0);
+  const selected = entries.length;
+  reporter.suiteResult(errors, selected, done, skipped);
+  return [done, skipped, selected, errors.length > 0];
 }
 
 /** @type {Map<string, (import('./internal').RunSuite)[]>} */
@@ -140,7 +139,7 @@ function defer() {
 // `bEach`, `aEach` hook
 // onto their respective collections
 /**
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').Handler<U>[]} hooks
  * @returns{import('.').RegisterHook<U>}
  */
@@ -151,7 +150,7 @@ function makeRegisterHook(hooks) {
 }
 
 /**
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').Handler<U>[]} top
  * @param {import('./internal').Handler<U>[]} each
  * @returns{import('.').RegisterHookTop<U>}
@@ -163,7 +162,7 @@ function makeRegisterHookTop(top, each) {
 // Helper to push `test` or `test.only`
 // onto their respective collections
 /**
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').TestEntry<U>[]} tests
  * @returns{import('.').RegisterTest<U>}
  */
@@ -174,7 +173,7 @@ function makeRegisterTest(tests) {
 }
 
 /**
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {import('./internal').Context<U>} ctx
  * @param {string} name
  * @returns{import('.').Suite<U>}
@@ -210,7 +209,7 @@ function setup(ctx, name) {
 
 /**
  * Factory function for suite
- * @template {object} [U = {}]
+ * @template {object} [U = Record<string,never>]
  * @param {string} [name]
  * @param {U} [userCtx]
  * @returns{import('.').Suite<U>}

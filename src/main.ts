@@ -1,4 +1,4 @@
-import { configure, suite } from './uvb';
+import { configure } from './uvb';
 import { all as allAssert } from './tests/assert';
 import { all as allDiff } from './tests/diff';
 

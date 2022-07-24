@@ -1,15 +1,17 @@
-export type State<U extends object = {}> = {
+export type State<U extends object = Record<string, never>> = {
   __test__: string;
   __suite__: string;
 } & U;
 
-export type Handler<U extends object = {}> = (state?: State<U>) => void;
-export type TestEntry<U extends object = {}> = [
+export type Handler<U extends object = Record<string, never>> = (
+  state?: State<U>
+) => void;
+export type TestEntry<U extends object = Record<string, never>> = [
   name: string,
   handler: Handler<U>
 ];
 
-export type Context<U extends object = {}> = {
+export type Context<U extends object = Record<string, never>> = {
   tests: TestEntry<U>[];
   before: Handler<U>[];
   after: Handler<U>[];
@@ -77,7 +79,7 @@ export type FrameObject = {
 // Only supported under V8
 //
 export interface ErrorConstructor {
-  captureStackTrace(thisArg: any, func: any): void;
+  captureStackTrace(thisArg: unknown, func: unknown): void;
 }
 
 export type TypeofType =
