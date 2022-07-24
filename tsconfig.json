@@ -18,12 +18,5 @@
     "noImplicitReturns": true,
     "skipLibCheck": true
   },
-  "include": [],
-  "files": [
-    "src/uvb/diff.js",
-    "src/uvb/assert.js",
-    "src/uvb/index.js",
-    "src/tests/diff.js",
-    "src/tests/assert.js"
-  ]
+  "include": ["src"],
 }

@@ -1,7 +1,7 @@
 import type { ArrayChange, Change } from 'diff';
 import type {
   Handler,
-  GroupErrors,
+  SuiteErrors,
   Reporter,
   EndResult,
   TypeofType,
@@ -38,7 +38,7 @@ export type Suite<U extends object = Record<string, never>> = {
 // run/reporter
 export import EndResult = EndResult;
 
-export import GroupErrors = GroupErrors;
+export import SuiteErrors = SuiteErrors;
 
 export import Reporter = Reporter;
 
@@ -56,6 +56,8 @@ export function suite<U extends object = Record<string, never>>(
 );
 
 export async function exec(config?: Configuration): Promise<boolean>;
+
+export const test: Suite<Record<string, never>>;
 
 // --- assert
 export type AssertionOptions = {
