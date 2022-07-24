@@ -5,7 +5,7 @@ export type State<U extends object = Record<string, never>> = {
 
 export type Handler<U extends object = Record<string, never>> = (
   state?: State<U>
-) => void;
+) => void | Promise<void>;
 export type TestEntry<U extends object = Record<string, never>> = [
   name: string,
   handler: Handler<U>

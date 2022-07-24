@@ -35,12 +35,6 @@ export type Suite<U extends object = Record<string, never>> = {
   run: () => void;
 };
 
-export function configure(reporter: Reporter, options?: ReporterOptions);
-export function suite<U extends object = Record<string, never>>(
-  name?: string,
-  userContext?: U
-);
-
 // run/reporter
 export import EndResult = EndResult;
 
@@ -48,9 +42,20 @@ export import GroupErrors = GroupErrors;
 
 export import Reporter = Reporter;
 
-export type ReporterOptions = {
+export type Configuration = {
+  reporter: Reporter;
   bail?: boolean;
+  autorun?: boolean;
 };
+
+export function configure(config: Configuration): void;
+
+export function suite<U extends object = Record<string, never>>(
+  name?: string,
+  userContext?: U
+);
+
+export async function exec(config?: Configuration): Promise<boolean>;
 
 // --- assert
 export type AssertionOptions = {

@@ -124,15 +124,20 @@ function queueRunSuite(run, name) {
 }
 
 /** @type {ReturnType<typeof setTimeout> | undefined} */
-let execId;
-/** @type {() => Promise<boolean> | undefined} */
-let exec;
+let executeId;
+/** @type {(() => Promise<boolean>) | undefined} */
+let execute;
+/**
+ * @param {import('./internal').RunSuite} run
+ * @param {string} name  Suite's name.
+ */
+function scheduleRunSuite(run, name) {
+  queueRunSuite(run, name);
 
-function defer() {
-  if (exec == undefined || execId !== undefined) return;
+  if (execute == undefined || executeId !== undefined) return;
 
-  clearTimeout(execId);
-  execId = setTimeout(exec);
+  clearTimeout(executeId);
+  executeId = setTimeout(execute);
 }
 
 // Helper to push a `before`, `after`,
@@ -194,8 +199,7 @@ function setup(ctx, name) {
 
     // Clean out suite context while sharing user context
     Object.assign(ctx, context(copy.state));
-    queueRunSuite(runSuite, name);
-    defer();
+    scheduleRunSuite(runSuite, name);
   };
 
   return Object.assign(test, {
@@ -229,12 +233,27 @@ function trackTime(t0 = performance.now()) {
   };
 }
 
+/** @type {import('.').Configuration | undefined } */
+let config;
+
 /**
- * @param {import('./internal').Reporter} reporter
- * @param {boolean} [bail]
+ * @param {import('.').Configuration} [override]
+ * @returns{import('.').Configuration}
+ */
+function selectConfig(override) {
+  const selected = override ? override : config;
+  if (!selected?.reporter)
+    throw new Error('uvb.exec: Missing configuration (reporter)');
+  return selected;
+}
+
+/**
+ * @param {import('.').Configuration} [execConfig]
  * @returns{Promise<boolean>}
  */
-async function execute(reporter, bail = false) {
+async function exec(execConfig) {
+  const { reporter, bail = false } = selectConfig(execConfig);
+
   const endTrack = trackTime();
   let done = 0,
     total = 0,
@@ -261,16 +280,19 @@ async function execute(reporter, bail = false) {
     duration: endTrack(),
   });
 
-  execId = undefined;
+  executeId = undefined;
   return withErrors;
 }
 
 /**
- * @param {import('.').Reporter} reporter
- * @param {import('.').ReporterOptions} [options]
+ * @param {import('.').Configuration} configuration
  */
-function configure(reporter, options) {
-  exec = () => execute(reporter, options?.bail);
+function configure(configuration) {
+  config = configuration;
+  execute = config?.autorun === true ? () => exec(configuration) : undefined;
 }
 
-export { configure, suite };
+/** @type {import('.').Suite<Record<string,never>>} */
+const test = suite();
+
+export { configure, exec, suite, test };
