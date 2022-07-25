@@ -139,6 +139,12 @@ declare namespace not {
 
   function ok(actual: unknown, message?: string | Error): void;
 
+  function snapshot(
+    actual: string,
+    expected: string,
+    message?: string | Error
+  ): void;
+
   function throws(
     fn: () => void,
     expected?: ((error: Error) => boolean) | RegExp,
@@ -153,6 +159,12 @@ declare namespace not {
 }
 
 export function ok(actual: unknown, message?: string | Error): void;
+
+export function snapshot(
+  actual: string,
+  expected: string,
+  message?: string | Error
+): void;
 
 export function throws(
   fn: () => void,

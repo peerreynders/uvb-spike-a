@@ -1,5 +1,23 @@
 import { dequal } from 'dequal';
-import { compare } from './diff';
+import { compare, lines } from './diff';
+
+/**
+ * @param {string} str
+ * @returns {string}
+ */
+function dedent(str) {
+  str = str.replace(/\r?\n/g, '\n');
+  const arr = str.match(/^[ \t]*(?=\S)/gm);
+  if (!arr) return str;
+
+  let i = 0,
+    min = 1 / 0,
+    len = (arr || []).length;
+  for (; i < len; i++) min = Math.min(min, arr[i].length);
+  return len && min
+    ? str.replace(new RegExp(`^[ \\t]{${min}}`, 'gm'), '')
+    : str;
+}
 
 class Assertion extends Error {
   /**
@@ -256,6 +274,47 @@ function ok(actual, message) {
   );
 }
 
+// --- begin `snapshot`
+/**
+ * @param {string} actual
+ * @param {string} expected
+ * @param {string | Error} message
+ */
+function snapshot(actual, expected, message) {
+  const actualTrim = dedent(actual);
+  const expectedTrim = dedent(expected);
+  // prettier-ignore
+  assert(
+    actualTrim === expectedTrim,
+    actualTrim,
+    expectedTrim,
+    'snapshot',
+    /** @type {(actual: unknown, expected: unknown) => unknown} */(lines),
+    'Expected value to match snapshot',
+    message
+  );
+}
+
+/**
+ * @param {string} actual
+ * @param {string} expected
+ * @param {string | Error} message
+ */
+function notSnapshot(actual, expected, message) {
+  const actualTrim = dedent(actual);
+  const expectedTrim = dedent(expected);
+  assert(
+    actualTrim !== expectedTrim,
+    actualTrim,
+    expectedTrim,
+    'not.snapshot',
+    undefined,
+    'Expected value not to match snapshot',
+    message
+  );
+}
+// --- end `snapshot`
+
 // --- begin `throws`
 
 /**
@@ -431,6 +490,7 @@ not.equal = notEqual;
 not.instance = notInstance;
 not.match = notMatch;
 not.ok = not;
+not.snapshot = notSnapshot;
 not.throws = notThrows;
 not.type = notType;
 
@@ -444,6 +504,7 @@ export {
   not,
   match,
   ok,
+  snapshot,
   throws,
   type,
   unreachable,

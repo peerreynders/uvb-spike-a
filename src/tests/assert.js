@@ -820,6 +820,16 @@ suiteRuns.push(notType.run);
 
 // ---
 
+const snapshot = suite('snapshot');
+
+snapshot('should be a function', () => {
+  assert.type(assert.snapshot, 'function');
+});
+
+suiteRuns.push(snapshot.run);
+
+// ---
+
 const notInstance = suite('not.instance');
 
 notInstance('should be a function', () => {
@@ -1039,6 +1049,7 @@ export {
   notThrows,
   notType,
   ok,
+  snapshot,
   throws,
   type,
   unreachable,
