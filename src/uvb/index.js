@@ -20,21 +20,20 @@ function noEntries(maybeObject) {
  * @returns {import('./internal').State<U>}
  */
 function state(name, userCtx) {
-  if (noEntries(userCtx)) {
+  const tags = {
+    __test__: '',
+    __suite__: name,
+  };
+
+  if (userCtx === undefined || noEntries(userCtx)) {
     // prettier-ignore
-    return /** @type {import('./internal').State<U>} */({
-      __test__: '',
-      __suite__: name,
-    });
+    return /** @type {import('./internal').State<U>} */(tags);
   }
 
-  return Object.assign(
-    {
-      __test__: '',
-      __suite__: name,
-    },
-    userCtx
-  );
+  /** type@ {unknown} */
+  const suiteState = Object.assign(userCtx, tags);
+  // prettier-ignore
+  return /** @type {import('./internal').State<U>} */(suiteState);
 }
 
 /**
@@ -140,40 +139,77 @@ function scheduleRunSuite(run, name) {
   executeId = setTimeout(execute);
 }
 
-// Helper to push a `before`, `after`,
-// `bEach`, `aEach` hook
-// onto their respective collections
 /**
+ * Helper to push a `before`, `after`,
+ * `bEach`, `aEach` hook
+ * onto their respective collections.
+ *
+ * Note: The registration function cannot
+ * bind directly to the array containing
+ * the hook handlers as `runSuite` purges
+ * all registrations and replaces the
+ * the array holding them with an empty
+ * one after the run so that the next
+ * run can be set up with a clean slate.
+ *
+ * This makes it necessary to
+ * maintain the indirection with `key`
+ * over the `Context` into the *current*
+ * array.
+ *
  * @template {object} [U = Record<string,never>]
- * @param {import('./internal').Handler<U>[]} hooks
+ * @param {import('./internal').Context<U>} ctx
+ * @param {keyof import('./internal').Context<U>} key
  * @returns{import('.').RegisterHook<U>}
  */
-function makeRegisterHook(hooks) {
+function makeRegisterHook(ctx, key) {
   return function registerHook(handler) {
-    hooks.push(handler);
+    // prettier-ignore
+    const collect = /** @type {import('./internal').Handler<U>[]} */(ctx[key]);
+    collect.push(handler);
   };
 }
 
 /**
  * @template {object} [U = Record<string,never>]
- * @param {import('./internal').Handler<U>[]} top
- * @param {import('./internal').Handler<U>[]} each
+ * @param {import('./internal').Context<U>} ctx
+ * @param {keyof import('./internal').Context<U>} topKey
+ * @param {keyof import('./internal').Context<U>} eachKey
  * @returns{import('.').RegisterHookTop<U>}
  */
-function makeRegisterHookTop(top, each) {
-  return Object.assign(makeRegisterHook(top), { each: makeRegisterHook(each) });
+function makeRegisterHookTop(ctx, topKey, eachKey) {
+  return Object.assign(makeRegisterHook(ctx, topKey), {
+    each: makeRegisterHook(ctx, eachKey),
+  });
 }
 
-// Helper to push `test` or `test.only`
-// onto their respective collections
 /**
+ * Helper to push `test` or `test.only`
+ * onto their respective collections.
+ *
+ * Note: The registration function cannot
+ * bind directly to the array containing
+ * the test entries as `runSuite` purges
+ * all registrations and replaces the
+ * the array holding them with an empty
+ * one after the run so that the next
+ * run can be set up with a clean slate.
+ *
+ * This makes it necessary to
+ * maintain the indirection with `key`
+ * over the `Context` into the *current*
+ * array.
+ *
  * @template {object} [U = Record<string,never>]
- * @param {import('./internal').TestEntry<U>[]} tests
+ * @param {import('./internal').Context<U>} ctx
+ * @param {keyof import('./internal').Context<U>} key
  * @returns{import('.').RegisterTest<U>}
  */
-function makeRegisterTest(tests) {
+function makeRegisterTest(ctx, key) {
   return function registerTest(name, handler) {
-    tests.push([name, handler]);
+    // prettier-ignore
+    const collect = /** @type {import('./internal').TestEntry<U>[]} */(ctx[key]);
+    collect.push([name, handler]);
   };
 }
 
@@ -184,10 +220,10 @@ function makeRegisterTest(tests) {
  * @returns{import('.').Suite<U>}
  */
 function setup(ctx, name) {
-  const test = makeRegisterTest(ctx.tests);
-  const only = makeRegisterTest(ctx.only);
-  const before = makeRegisterHookTop(ctx.before, ctx.bEach);
-  const after = makeRegisterHookTop(ctx.after, ctx.aEach);
+  const test = makeRegisterTest(ctx, 'tests');
+  const only = makeRegisterTest(ctx, 'only');
+  const before = makeRegisterHookTop(ctx, 'before', 'bEach');
+  const after = makeRegisterHookTop(ctx, 'after', 'aEach');
   const skip = () => {
     ctx.skipped += 1;
   };

@@ -1,36 +1,36 @@
-import { exec, suite, test } from '../uvb';
+import { exec as execFn, suite, test as testFn } from '../uvb';
 import * as assert from '../uvb/assert';
 
 /** @type {(() => void)[]} */
 const suiteRuns = [];
 
-const Ste = suite('suite');
+const ste = suite('suite');
 
-Ste('should be a function', () => {
+ste('should be a function', () => {
   assert.type(suite, 'function');
 });
 
-suiteRuns.push(Ste.run);
+suiteRuns.push(ste.run);
 
 // ---
 
-const Test = suite('test');
+const test = suite('test');
 
-Test('should be a function', () => {
-  assert.type(test, 'function');
+test('should be a function', () => {
+  assert.type(testFn, 'function');
 });
 
-suiteRuns.push(Test.run);
+suiteRuns.push(test.run);
 
 // ---
 
-const Exec = suite('exec');
+const exec = suite('exec');
 
-Test('should be a function', () => {
-  assert.type(exec, 'function');
+exec('should be a function', () => {
+  assert.type(execFn, 'function');
 });
 
-suiteRuns.push(Exec.run);
+suiteRuns.push(exec.run);
 
 // ---
 
@@ -38,4 +38,4 @@ function all() {
   return suiteRuns.slice();
 }
 
-export { Ste, all };
+export { ste, test, exec, all };

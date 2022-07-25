@@ -4,6 +4,7 @@ import type {
   SuiteErrors,
   Reporter,
   EndResult,
+  State,
   TypeofType,
 } from './internal';
 
@@ -25,6 +26,8 @@ export type RegisterSkip<U extends object = Record<string, never>> = (
   _name?: string,
   _handler?: Handler<U>
 ) => void;
+
+export import State = State;
 
 export type Suite<U extends object = Record<string, never>> = {
   (name: string, handler: Handler<U>): void;
