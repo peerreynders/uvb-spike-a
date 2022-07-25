@@ -23,6 +23,7 @@ const testReporter = (function (): Reporter {
 
 configure({
   reporter: testReporter,
+  interval: 20,
   bail: false,
   autorun: false,
 });

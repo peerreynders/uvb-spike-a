@@ -62,22 +62,56 @@ function context(state) {
  * @template {object} [U = Record<string,never>]
  * @param {import('./internal').Context<U>} ctx
  * @param {string} suiteName
- * @param {import('./internal').Reporter} reporter
- * @returns {Promise<import('./internal').RunResult>}
+ * @returns {import('./internal').RunSuite}
  */
-async function runner(ctx, suiteName, reporter) {
-  const { only, tests, before, after, bEach, aEach, state } = ctx;
-  const entries = only.length ? only : tests;
-  /** @type {import('./internal').SuiteErrors} */
-  const errors = [];
-  let done = 0;
+function prepareRunSuite(ctx, suiteName) {
+  return function makeNext(reporter) {
+    const { only, tests, before, after, bEach, aEach, state } = ctx;
+    const entries = only.length ? only : tests;
+    /** @type {import('./internal').SuiteErrors} */
+    const errors = [];
+    /** @type {(import('./internal').RunResult) | undefined} */
+    let result = undefined;
+    let done = 0;
 
-  try {
-    reporter.suiteStart(suiteName);
-    for (const hook of before) await hook(state);
+    const teardown = async () => {
+      try {
+        for (const hook of after) await hook(state);
+      } finally {
+        const skipped = ctx.skipped + (only.length ? tests.length : 0);
+        const selected = entries.length;
+        reporter.suiteResult(errors, selected, done, skipped);
+        result = [done, skipped, selected, errors.length > 0];
+      }
+    };
 
-    for (const [name, testHandler] of entries) {
+    /** @type {(() => Promise<void>) | undefined} */
+    let setup = async () => {
+      try {
+        reporter.suiteStart(suiteName);
+        for (const hook of before) await hook(state);
+      } catch (error) {
+        try {
+          teardown();
+        } catch (_ignore) {
+          throw error;
+        }
+        throw error;
+      } finally {
+        setup = undefined;
+      }
+    };
+
+    let index = 0;
+
+    return async function next() {
+      if (result) return result;
+
+      if (setup) await setup();
+
+      const [name, testHandler] = entries[index];
       state.__test__ = name;
+
       try {
         for (const hook of bEach) await hook(state);
         await testHandler(state);
@@ -85,19 +119,18 @@ async function runner(ctx, suiteName, reporter) {
         reporter.testPass();
         done += 1;
       } catch (error) {
-        for (const hook of bEach) await hook(state);
+        for (const hook of aEach) await hook(state);
         errors.push([error, name, suiteName]);
         reporter.testFail();
       }
-    }
-  } finally {
-    state.__test__ = '';
-    for (const hook of after) await hook(state);
-  }
-  const skipped = ctx.skipped + (only.length ? tests.length : 0);
-  const selected = entries.length;
-  reporter.suiteResult(errors, selected, done, skipped);
-  return [done, skipped, selected, errors.length > 0];
+
+      state.__test__ = '';
+      index += 1;
+      if (index >= entries.length) await teardown();
+
+      return result === undefined ? true : result;
+    };
+  };
 }
 
 /** @type {Map<string, (import('./internal').RunSuite)[]>} */
@@ -231,7 +264,7 @@ function setup(ctx, name) {
     // transfer suite context to test run
     const copy = { ...ctx };
     /** @type {import('./internal').RunSuite} */
-    const runSuite = (reporter) => runner(copy, name, reporter);
+    const runSuite = prepareRunSuite(copy, name);
 
     // Clean out suite context while sharing user context
     Object.assign(ctx, context(copy.state));
@@ -278,8 +311,10 @@ let config;
  */
 function selectConfig(override) {
   const selected = override ? override : config;
+
   if (!selected?.reporter)
     throw new Error('uvb.exec: Missing configuration (reporter)');
+
   return selected;
 }
 
@@ -287,37 +322,103 @@ function selectConfig(override) {
  * @param {import('.').Configuration} [execConfig]
  * @returns{Promise<boolean>}
  */
-async function exec(execConfig) {
-  const { reporter, bail = false } = selectConfig(execConfig);
-
+function exec(execConfig) {
   const endTrack = trackTime();
-  let done = 0,
-    total = 0,
-    skipped = 0,
-    withErrors = false;
+  const { reporter, interval: ci, bail = false } = selectConfig(execConfig);
+  const interval = ci && ci >= 10 ? ci : Number.MAX_SAFE_INTEGER;
 
-  for (const [, queued] of suiteRuns) {
-    for (const runSuite of queued) {
-      const [ran, skip, selected, errors] = await runSuite(reporter);
+  const endResult = {
+    withErrors: false,
+    done: 0,
+    skipped: 0,
+    total: 0,
+    duration: 0,
+  };
+  let settled = false;
 
-      total += selected;
-      done += ran;
-      skipped += skip;
-      withErrors ||= errors;
-      if (withErrors && bail) return withErrors;
+  /** @param {boolean} [forceError] */
+  const teardown = (forceError) => {
+    endResult.withErrors = forceError ?? endResult.withErrors;
+    endResult.duration = endTrack();
+    reporter.result(endResult);
+
+    executeId = undefined;
+    settled = true;
+    return endResult.withErrors;
+  };
+
+  const suiteQueued = [...suiteRuns.values()];
+  let suiteIndex = -1;
+  let queuedIndex = -1;
+
+  // Find first vaild `next`
+  // (So we don't have to constantly
+  // deal with TS's concern about
+  // `undefined`)
+  //
+  primeLoop: for (let i = 0; i < suiteQueued.length; i += 1) {
+    if (suiteQueued[i].length < 1) continue;
+
+    const q = suiteQueued[i];
+    for (let j = 0; j < q.length; j += 1) {
+      if (typeof q[j] === 'function') {
+        suiteIndex = i;
+        queuedIndex = j;
+        break primeLoop;
+      }
     }
   }
 
-  reporter.result({
-    withErrors,
-    done,
-    skipped,
-    total,
-    duration: endTrack(),
-  });
+  if (suiteIndex < 0 || queuedIndex < 0) return Promise.resolve(teardown());
 
-  executeId = undefined;
-  return withErrors;
+  let queued = suiteQueued[suiteIndex];
+  let next = queued[queuedIndex](reporter);
+
+  return new Promise((resolve, reject) => {
+    async function continueExec() {
+      if (settled) reject(new Error('continueExec() invoked after teardown!'));
+      try {
+        const tEntry = performance.now();
+
+        for (;;) {
+          for (;;) {
+            const result = await next();
+            if (result !== true) {
+              // This particular suite run complete
+              const [ran, skip, selected, errors] = result;
+              endResult.total += selected;
+              endResult.done += ran;
+              endResult.skipped += skip;
+              endResult.withErrors ||= errors;
+              if (endResult.withErrors && bail) resolve(teardown());
+
+              // Setup next run
+              queuedIndex += 1;
+              if (queuedIndex >= queued.length) break;
+              next = queued[queuedIndex](reporter);
+            }
+            if (performance.now() - tEntry < interval) continue;
+
+            setTimeout(continueExec);
+            return;
+          }
+          suiteIndex += 1;
+          if (suiteIndex >= suiteQueued.length) break;
+
+          queued = suiteQueued[suiteIndex];
+          queuedIndex = 0;
+          next = queued[queuedIndex](reporter);
+        }
+      } catch (error) {
+        teardown(true);
+        reject(error);
+      }
+
+      resolve(teardown());
+    }
+
+    continueExec();
+  });
 }
 
 /**

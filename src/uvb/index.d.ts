@@ -47,8 +47,9 @@ export import Reporter = Reporter;
 
 export type Configuration = {
   reporter: Reporter;
-  bail?: boolean;
   autorun?: boolean;
+  bail?: boolean;
+  interval?: number;
 };
 
 export function configure(config: Configuration): void;

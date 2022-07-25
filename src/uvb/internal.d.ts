@@ -56,7 +56,7 @@ export type RunResult = [
   withErrors: boolean
 ];
 
-export type RunSuite = (reporter: Reporter) => Promise<RunResult>;
+export type RunSuite = (reporter: Reporter) => () => Promise<true | RunResult>;
 
 // diff
 export type FrameArray = {
