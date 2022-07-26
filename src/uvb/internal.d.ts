@@ -47,6 +47,8 @@ export interface Reporter {
   testPass: () => void;
   testFail: () => void;
   result: (result: EndResult) => void;
+  isAttached: () => boolean;
+  onDetach: (handler: () => void) => void;
 }
 
 export type RunResult = [
