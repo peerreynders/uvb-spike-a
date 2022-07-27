@@ -96,12 +96,22 @@ export type TypeofType =
 
 // uvb-report
 
-export type SummaryRefs = {
-  total: Element;
-  passedRow: Element;
-  passed: Element;
-  skipped: Element;
-  duration: Element;
+export type EntrySuiteStart = {
+  kind: 'suite-start';
+  name: string;
+};
+
+export type EntrySuiteTest = {
+  kind: 'suite-test';
+  passed: boolean;
+};
+
+export type EntrySuiteResult = {
+  kind: 'suite-result';
+  selected: number;
+  passed: number;
+  skipped: number;
+  errors: SuiteErrors;
 };
 
 export type EntryEndResult = {
@@ -109,7 +119,11 @@ export type EntryEndResult = {
   endResult: EndResult;
 };
 
-export type ReportEntry = EntryEndResult;
+export type ReportEntry =
+  | EntrySuiteStart
+  | EntrySuiteTest
+  | EntrySuiteResult
+  | EntryEndResult;
 
 export type ReportSummary = {
   withErrors: boolean;
@@ -118,4 +132,21 @@ export type ReportSummary = {
   passed: string;
   skipped: string;
   duration: string;
+};
+
+export type SummaryRefs = {
+  total: HTMLTableCellElement;
+  passedRow: HTMLTableRowElement;
+  passed: HTMLTableCellElement;
+  skipped: HTMLTableCellElement;
+  duration: HTMLTableCellElement;
+  tbody: HTMLTableSectionElement;
+};
+
+export type SuiteRefs = {
+  header: HTMLTableCellElement;
+  count: HTMLTableCellElement;
+  indicators: HTMLTableCellElement;
+  id: string;
+  outcomes: string[];
 };
