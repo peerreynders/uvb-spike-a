@@ -291,17 +291,6 @@ function suite(name = '', userCtx) {
   return setup(context(state(name, userCtx)), name);
 }
 
-/**
- * @param {number} [t0]
- * @returns{() => number}
- */
-function trackTime(t0 = performance.now()) {
-  return function stopTrack() {
-    const t1 = performance.now();
-    return t1 - t0;
-  };
-}
-
 /** @type {import('.').Configuration | undefined } */
 let config;
 
@@ -323,7 +312,15 @@ function selectConfig(override) {
  * @returns{Promise<boolean>}
  */
 function exec(execConfig) {
-  const endTrack = trackTime();
+  let tEntry = performance.now();
+  let tTotal = 0;
+  const tUpdate = () => {
+    const tNow = performance.now();
+    tTotal += tNow - tEntry;
+    tEntry = tNow;
+    return tTotal;
+  };
+
   const { reporter, interval: ci, bail = false } = selectConfig(execConfig);
   const interval = ci && ci >= 10 ? ci : Number.MAX_SAFE_INTEGER;
 
@@ -339,7 +336,7 @@ function exec(execConfig) {
   /** @param {boolean} [forceError] */
   const teardown = (forceError) => {
     endResult.withErrors = forceError ?? endResult.withErrors;
-    endResult.duration = endTrack();
+    endResult.duration = tUpdate();
     reporter.result(endResult);
 
     executeId = undefined;
@@ -378,7 +375,7 @@ function exec(execConfig) {
     async function continueExec() {
       if (settled) reject(new Error('continueExec() invoked after teardown!'));
       try {
-        const tEntry = performance.now();
+        tEntry = performance.now();
 
         for (;;) {
           for (;;) {
@@ -399,6 +396,7 @@ function exec(execConfig) {
             }
             if (performance.now() - tEntry < interval) continue;
 
+            tUpdate();
             setTimeout(continueExec);
             return;
           }
@@ -417,6 +415,7 @@ function exec(execConfig) {
       resolve(teardown());
     }
 
+    tUpdate();
     continueExec();
   });
 }

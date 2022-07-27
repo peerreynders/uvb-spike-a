@@ -93,3 +93,29 @@ export type TypeofType =
   | 'undefined'
   | 'object'
   | 'function';
+
+// uvb-report
+
+export type SummaryRefs = {
+  total: Element;
+  passedRow: Element;
+  passed: Element;
+  skipped: Element;
+  duration: Element;
+};
+
+export type EntryEndResult = {
+  kind: 'end-result';
+  endResult: EndResult;
+};
+
+export type ReportEntry = EntryEndResult;
+
+export type ReportSummary = {
+  withErrors: boolean;
+  withSkips: boolean;
+  total: string;
+  passed: string;
+  skipped: string;
+  duration: string;
+};
