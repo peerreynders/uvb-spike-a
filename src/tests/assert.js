@@ -1029,6 +1029,26 @@ suiteRuns.push(notThrows.run);
 
 // ---
 
+const throwSomeErrors = suite('throw some errors');
+
+throwSomeErrors('let the first one pass', () => {
+  assert.ok(true);
+});
+
+throwSomeErrors('let it crash #1', () => {
+  assert.ok(false);
+});
+
+throwSomeErrors('let it crash #2', () => {
+  assert.ok(false);
+});
+
+throwSomeErrors('let the last one pass', () => {
+  assert.ok(true);
+});
+
+suiteRuns.push(throwSomeErrors.run);
+
 function all() {
   return suiteRuns.slice();
 }

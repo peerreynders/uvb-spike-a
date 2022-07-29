@@ -134,6 +134,14 @@ export type ReportSummary = {
   duration: string;
 };
 
+export type ReportError = {
+  suiteName: string;
+  testName: string;
+  message: string;
+  operator: string;
+  stack: string;
+};
+
 export type SummaryRefs = {
   total: HTMLTableCellElement;
   passedRow: HTMLTableRowElement;

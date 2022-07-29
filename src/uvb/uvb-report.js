@@ -1,3 +1,4 @@
+import { Assertion } from './assert';
 const UVB_REPORT_READY = 'uvb-report:ready';
 
 /**
@@ -11,6 +12,48 @@ const formatMs = new Intl.NumberFormat([], {
   unit: 'millisecond',
   unitDisplay: 'short',
 });
+
+/** @param {string} s */
+const trim = (s) => s.trim();
+
+/** @param {string} trace */
+function transformTrace(trace) {
+  const i = trace?.indexOf('\n') ?? -1;
+  if (i < 0) return '';
+
+  return trace.substring(i).split('\n').map(trim).join('\n');
+}
+
+/**
+ * @param {import('./internal').SuiteErrors[number]} suiteError
+ * @returns {import('./internal').ReportError}
+ */
+function transformSuiteError(suiteError) {
+  const [error, testName, suiteName] = suiteError;
+  let message = '';
+  let operator = '';
+  let stack = '';
+
+  if (error instanceof Error) {
+    if (error.name) message = error.name;
+    if (error.message)
+      message = message ? `${message}: ${error.message}` : error.message;
+    if (error instanceof Assertion && error.operator) operator = error.operator;
+    if (typeof error.stack === 'string') stack = transformTrace(error.stack);
+  } else if (typeof error === 'string') {
+    message = error;
+  } else {
+    message = String(error);
+  }
+
+  return {
+    suiteName,
+    testName,
+    message,
+    operator,
+    stack,
+  };
+}
 
 /**
  * @implements {Reporter}
@@ -130,7 +173,7 @@ class UvbReporter {
             entry.selected,
             entry.passed,
             entry.skipped,
-            entry.errors.length
+            entry.errors.map(transformSuiteError)
           );
           break;
 
@@ -228,6 +271,60 @@ function updateSuiteResult(suite, selected, passed, skipped, errors) {
       ? 'uvb-report--skip'
       : 'uvb-report--pass';
   suite.count.classList.add(indicator);
+}
+
+/**
+ * @param {string} name
+ * @param {number} suiteNo
+ * @param {number} failNo
+ * @param {string} message
+ * @param {string} operator
+ * @returns {Element[]}
+ */
+function renderTestFailure(name, suiteNo, failNo, message, operator) {
+  const id = `fail${failNo}`;
+  const suiteId = `suite${suiteNo}`;
+  const content = operator
+    ? `${message} <span class="uvb-report-operator">(${operator})</span>`
+    : message;
+  const template = document.createElement('template');
+  template.innerHTML = `<tbody>
+   <tr>
+     <th id="${id}">${name}</th>
+   <tr>
+   <tr>
+     <td class="uvb-report-fail-message" headers="${suiteId} ${id}" >${content}</td>
+   </tr>
+</tbody>`;
+
+  const root = template.content.firstChild;
+  if (!(root instanceof HTMLTableSectionElement))
+    throw new Error('renderTestFailure: Incorrect root type');
+
+  return Array.from(root.children);
+}
+
+/**
+ * @param {number} suiteNo
+ * @param {number} failNo
+ * @param {string} stack
+ * @returns {HTMLTableRowElement}
+ */
+function renderErrorStack(suiteNo, failNo, stack) {
+  const id = `fail${failNo}`;
+  const suiteId = `suite${suiteNo}`;
+  const template = document.createElement('template');
+  template.innerHTML = `<tr>
+     <td class="uvb-report-error-stack" headers="${suiteId} ${id}">
+       <pre>${stack}</pre>
+     </td>
+   </tr>`;
+
+  const root = template.content.firstChild;
+  if (!(root instanceof HTMLTableRowElement))
+    throw new Error('renderErrorStack: Incorrect root type');
+
+  return root;
 }
 
 const summaryContent = (() => {
@@ -332,7 +429,7 @@ class UvbReport extends HTMLElement {
   /** @type { boolean } */
   #complete;
   #suiteNo;
-  // #failNo;
+  #failNo;
 
   /** @type {import('./internal').SummaryRefs} */
   #summary;
@@ -347,7 +444,7 @@ class UvbReport extends HTMLElement {
 
     this.#complete = false;
     this.#suiteNo = 0;
-    // this.#failNo = 0;
+    this.#failNo = 0;
     const [node, summary] = prepareSummary();
     this.replaceChildren(node);
     this.#summary = summary;
@@ -400,6 +497,7 @@ class UvbReport extends HTMLElement {
   renderSuiteTest(passed) {
     if (this.#suite === undefined)
       throw new Error('renderSuiteTest: expected suite');
+
     updateSuiteTest(this.#suite, passed);
   }
 
@@ -407,12 +505,35 @@ class UvbReport extends HTMLElement {
    * @param {number} selected
    * @param {number} passed
    * @param {number} skipped
-   * @param {number} errors
+   * @param {import('./internal').ReportError[]} errors
    */
   renderSuiteResult(selected, passed, skipped, errors) {
     if (this.#suite === undefined)
       throw new Error('renderSuiteTest: expected suite');
-    updateSuiteResult(this.#suite, selected, passed, skipped, errors);
+
+    updateSuiteResult(this.#suite, selected, passed, skipped, errors.length);
+
+    for (const error of errors) {
+      const rows = renderTestFailure(
+        error.testName,
+        this.#suiteNo,
+        this.#failNo,
+        error.message,
+        error.operator
+      );
+      this.#summary.tbody.append(...rows);
+
+      if (error.stack) {
+        const stackRow = renderErrorStack(
+          this.#suiteNo,
+          this.#failNo,
+          error.stack
+        );
+        this.#summary.tbody.append(stackRow);
+      }
+
+      this.#failNo += 1;
+    }
   }
 
   /** @param {import('./internal').ReportSummary} entry */
