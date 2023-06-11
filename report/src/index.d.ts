@@ -1,5 +1,11 @@
-export const UVB_REPORT_READY: string;
+export const UVUB_REPORT_READY: string;
 
-export class UvbReport extends HTMLElement {
-  get reporter(): UvbReporter | undefined;
+export class UvubReport extends HTMLElement {
+  constructor();
+  get reporter(): UvubReporter | undefined;
+}
+
+export class UvubReportReadyEvent extends CustomEvent {
+  constructor(element: UvuReport);
+  get reporter(): UvubReporter;
 }

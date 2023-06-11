@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,26 +8,55 @@
     <title>Vite + TS</title>
   </head>
   <body>
-    <uvb-report></uvb-report>
-		<template id="uvub-suite">
+    <uvub-report></uvub-report>
+    <template id="uvub-report-suite">
       <tr>
         <th></th>
         <td class="js-uvb-report-test-count">( / )</td>
         <td class="js-uvb-report-test-indicator"></td>
       </tr>
+    </template>
+    <template id="uvub-report-failure">
+      <tbody>
+        <tr>
+          <th></th>
+        </tr>
+        <tr>
+          <td class="uvb-report-fail-message">
+            <span class="uvb-report-operator"></span>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+		<template id="uvub-report-error">
+			<tr>
+    		<td class="uvb-report-error-stack">
+      		<pre></pre>
+     		</td>
+   		</tr>
 		</template>
-		<template id="uvub-report-failure">
-			<tbody>
-				<tr>
-     			<th></th>
-   			</tr>
-   			<tr>
-     			<td class="uvb-report-fail-message">
-						<span class="uvb-report-operator"></span>
-					</td>
-   			</tr>
-			</tbody>
-		</template>
+    <template id="uvub-report-summary">
+      <table>
+        <tbody>
+          <tr>
+            <th id="total">Total</th>
+            <td class="js-uvb-report-total" headers="total"></td>
+          </tr>
+          <tr>
+            <th id="passed">Passed</th>
+            <td class="js-uvb-report-passed" headers="passed"></td>
+          </tr>
+          <tr>
+            <th id="skipped">Skipped</th>
+            <td class="js-uvb-report-skipped" headers="skipped"></td>
+          </tr>
+          <tr>
+            <th id="duration">Duration</th>
+            <td class="js-uvb-report-duration" headers="duration"></td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
     <script type="module" src="test/tests.ts"></script>
   </body>
 </html>

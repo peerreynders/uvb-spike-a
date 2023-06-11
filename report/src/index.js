@@ -1,5 +1,5 @@
 import { Assertion } from '../../assert/src/index.js';
-const UVB_REPORT_READY = 'uvb-report:ready';
+const UVUB_REPORT_READY = 'uvub-report:ready';
 
 /**
  * @typedef {import('../../src').Reporter} Reporter
@@ -67,33 +67,94 @@ function getTemplateById(id) {
   return template;
 }
 
-const TEMPLATE_SUITE_ID = 'uvub-suite';
+/**
+ * @param {HTMLTemplateElement} template
+ * @returns {Node | undefined}
+ */
+const cloneTemplateRoot = (template) =>
+  template.content.firstElementChild?.cloneNode(true);
+
+const TEMPLATE_SUITE_ID = 'uvub-report-suite';
 
 /** @type {undefined | HTMLTemplateElement} */
 let suiteTemplate;
 
-/** @returns {HTMLTemplateElement} */
-const getSuiteTemplate = () =>
-  suiteTemplate
-    ? suiteTemplate
-    : (suiteTemplate = getTemplateById(TEMPLATE_SUITE_ID));
+/** @returns {HTMLTableRowElement} */
+function cloneSuiteTemplate() {
+  const root = cloneTemplateRoot(
+    suiteTemplate
+      ? suiteTemplate
+      : (suiteTemplate = getTemplateById(TEMPLATE_SUITE_ID))
+  );
+
+  if (!(root instanceof HTMLTableRowElement))
+    throw new Error('cloneSuiteTemplate: Incorrect root type');
+
+  return root;
+}
 
 const TEMPLATE_FAIL_ID = 'uvub-report-failure';
 
 /** @type {undefined | HTMLTemplateElement} */
 let failureTemplate;
 
-/** @returns {HTMLTemplateElement} */
-const getFailureTemplate = () =>
-  failureTemplate
-    ? failureTemplate
-    : (failureTemplate = getTemplateById(TEMPLATE_FAIL_ID));
+/** @returns {HTMLTableSectionElement} */
+function cloneFailureTemplate() {
+  const root = cloneTemplateRoot(
+    failureTemplate
+      ? failureTemplate
+      : (failureTemplate = getTemplateById(TEMPLATE_FAIL_ID))
+  );
+
+  if (!(root instanceof HTMLTableSectionElement))
+    throw new Error('cloneFailureTemplate: Incorrect root type');
+
+  return root;
+}
+
+const TEMPLATE_ERROR_ID = 'uvub-report-error';
+
+/** @type {undefined | HTMLTemplateElement} */
+let errorTemplate;
+
+/** @returns {HTMLTableRowElement} */
+function cloneErrorTemplate() {
+  const root = cloneTemplateRoot(
+    errorTemplate
+      ? errorTemplate
+      : (errorTemplate = getTemplateById(TEMPLATE_ERROR_ID))
+  );
+
+  if (!(root instanceof HTMLTableRowElement))
+    throw new Error('cloneErrorTemplate: Incorrect root type');
+
+  return root;
+}
+
+const TEMPLATE_SUMMARY_ID = 'uvub-report-summary';
+
+/** @type {undefined | HTMLTemplateElement} */
+let summaryTemplate;
+
+/** @returns {HTMLTableElement} */
+function cloneSummaryTemplate() {
+  const root = cloneTemplateRoot(
+    summaryTemplate
+      ? summaryTemplate
+      : (summaryTemplate = getTemplateById(TEMPLATE_SUMMARY_ID))
+  );
+
+  if (!(root instanceof HTMLTableElement))
+    throw new Error('cloneSummaryTemplate: Incorrect root type');
+
+  return root;
+}
 
 /**
  * @implements {Reporter}
  */
-class UvbReporter {
-  /** @type {UvbReport | undefined} */
+class UvubReporter {
+  /** @type {UvubReport | undefined} */
   #report;
   /** @type {import('./internal').ReportEntry[]} */
   #entries;
@@ -102,7 +163,7 @@ class UvbReporter {
   /** @type {(() => void) | undefined} */
   #notify;
 
-  /** @param {UvbReport} report */
+  /** @param {UvubReport} report */
   constructor(report) {
     this.#report = report;
     this.#entries = [];
@@ -241,11 +302,7 @@ class UvbReporter {
  * @returns {[HTMLTableRowElement, import('./internal').SuiteRefs]}
  */
 function prepareSuite(name, suiteNo) {
-  const template = getSuiteTemplate();
-  const root = template.content.firstElementChild?.cloneNode(true);
-  if (!(root instanceof HTMLTableRowElement))
-    throw new Error('prepareSuite: Incorrect root type');
-
+  const root = cloneSuiteTemplate();
   const header = root.querySelector('th');
   const count = root.querySelector('.js-uvb-report-test-count');
   const indicators = root.querySelector('.js-uvb-report-test-indicator');
@@ -316,20 +373,15 @@ function updateSuiteResult(suite, selected, passed, skipped, errors) {
  * @returns {Element[]}
  */
 function renderTestFailure(name, suiteNo, failNo, message, operator) {
-  const template = getFailureTemplate();
-  const root = template.content.firstElementChild?.cloneNode(true);
-  console.log(root);
-  if (!(root instanceof HTMLTableSectionElement))
-    throw new Error('renderTestFailure: Incorrect root type');
-
+  const root = cloneFailureTemplate();
   const header = root.querySelector('th');
-  const detail = root.querySelector('td');
+  const data = root.querySelector('td');
   const span = root.querySelector('span');
 
   if (
     !(
       header instanceof HTMLTableCellElement &&
-      detail instanceof HTMLTableCellElement &&
+      data instanceof HTMLTableCellElement &&
       span instanceof HTMLSpanElement
     )
   ) {
@@ -337,18 +389,17 @@ function renderTestFailure(name, suiteNo, failNo, message, operator) {
   }
 
   const id = `fail${failNo}`;
-  const suiteId = `suite${suiteNo}`;
 
-  header.setAttribute('id', id);
   header.textContent = name;
-  detail.headers = `${suiteId} ${id}`;
+  header.setAttribute('id', id);
+  data.headers = `suite${suiteNo} ${id}`;
 
   if (operator) {
     span.textContent = `(${operator})`;
     const text = document.createTextNode(`${message} `);
     span.parentNode?.insertBefore(text, span);
   } else {
-    detail.textContent = message;
+    data.textContent = message;
   }
 
   return Array.from(root.children);
@@ -361,56 +412,25 @@ function renderTestFailure(name, suiteNo, failNo, message, operator) {
  * @returns {HTMLTableRowElement}
  */
 function renderErrorStack(suiteNo, failNo, stack) {
-  const id = `fail${failNo}`;
-  const suiteId = `suite${suiteNo}`;
-  const template = document.createElement('template');
-  template.innerHTML = `<tr>
-     <td class="uvb-report-error-stack" headers="${suiteId} ${id}">
-       <pre>${stack}</pre>
-     </td>
-   </tr>`;
+  const root = cloneErrorTemplate();
+  const data = root.querySelector('td');
+  const pre = root.querySelector('pre');
+  if (
+    !(data instanceof HTMLTableCellElement && pre instanceof HTMLPreElement)
+  ) {
+    throw new Error('renderErrorStack: Missing references');
+  }
 
-  const root = template.content.firstChild;
-  if (!(root instanceof HTMLTableRowElement))
-    throw new Error('renderErrorStack: Incorrect root type');
-
+  data.headers = `suite${suiteNo} fail${failNo}`;
+  pre.textContent = stack;
   return root;
 }
-
-const summaryContent = (() => {
-  const template = document.createElement('template');
-  template.innerHTML = `<table>
-  <tbody>
-    <tr>
-      <th id="total">Total</th>
-      <td class="js-uvb-report-total" headers"total"></td>
-    </tr>
-    <tr>
-      <th id="passed">Passed</th>
-      <td class="js-uvb-report-passed" headers="passed"></td>
-    </tr>
-    <tr>
-      <th id="skipped">Skipped</th>
-      <td class="js-uvb-report-skipped" headers="skipped"></td>
-    </tr>
-    <tr>
-      <th id="duration">Duration</th>
-      <td class="js-uvb-report-duration" headers="duration"></td>
-    </tr>
-  </tbody>
-</table>`;
-
-  return template.content;
-})();
 
 /**
  * @returns {[HTMLTableElement, import('./internal').SummaryRefs]}
  */
 function prepareSummary() {
-  const root = summaryContent.cloneNode(true).firstChild;
-  if (!(root instanceof HTMLTableElement))
-    throw new Error('prepareSummary: Incorrect root type');
-
+  const root = cloneSummaryTemplate();
   const total = root.querySelector('.js-uvb-report-total');
   const passed = root.querySelector('.js-uvb-report-passed');
   const skipped = root.querySelector('.js-uvb-report-skipped');
@@ -475,7 +495,20 @@ function updateSummary(summary, data) {
   duration.textContent = data.duration;
 }
 
-class UvbReport extends HTMLElement {
+class UvubReportReadyEvent extends CustomEvent {
+  /** @param {UvubReport} report */
+  constructor(report) {
+    super(UVUB_REPORT_READY, { bubbles: true, detail: report });
+  }
+
+  get reporter() {
+    /** @type {UvubReport} */
+    const report = this.detail;
+    return report.reporter;
+  }
+}
+
+class UvubReport extends HTMLElement {
   /** @type { boolean } */
   #complete;
   #suiteNo;
@@ -486,7 +519,7 @@ class UvbReport extends HTMLElement {
   /** @type {import('./internal').SuiteRefs | undefined} */
   #suite;
 
-  /** @type {UvbReporter | undefined} */
+  /** @type {UvubReporter | undefined} */
   #reporter;
 
   constructor() {
@@ -502,7 +535,7 @@ class UvbReport extends HTMLElement {
 
   connectedCallback() {
     if (this.isConnected) {
-      this.dispatchEvent(new CustomEvent(UVB_REPORT_READY, { bubbles: true }));
+      this.dispatchEvent(new UvubReportReadyEvent(this));
     }
   }
 
@@ -519,7 +552,7 @@ class UvbReport extends HTMLElement {
 
   get reporter() {
     this.detach();
-    this.#reporter = new UvbReporter(this);
+    this.#reporter = new UvubReporter(this);
     return this.#reporter;
   }
 
@@ -595,4 +628,4 @@ class UvbReport extends HTMLElement {
   }
 }
 
-export { UVB_REPORT_READY, UvbReport };
+export { UVUB_REPORT_READY, UvubReport, UvubReportReadyEvent };
