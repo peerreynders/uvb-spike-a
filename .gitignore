@@ -8,8 +8,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
 *.local
 
 # Editor directories and files
@@ -26,6 +24,3 @@ dist-ssr
 # environment variables
 .env
 .env.production
-
-# emacs temporary files
-.#*
