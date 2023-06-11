@@ -1,5 +1,5 @@
-import { suite } from '../uvb';
-import * as assert from '../uvb/assert';
+import { suite } from '../src';
+import * as assert from '../assert/src';
 
 /**
  * @param {unknown} err

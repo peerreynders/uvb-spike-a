@@ -1,15 +1,31 @@
 {
-  "name": "uvb-spike-a",
-  "version": "0.0.1",
+  "name": "uvub",
+  "version": "0.1.0",
+  "module": "./dist/uvub.js",
+  "types": "./src/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/uvub.mjs"
+    },
+    "./assert": {
+      "types": "./assert/src/index.d.ts",
+      "import": "./dist/assert.mjs"
+    },
+    "./report": {
+      "types": "./report/src/index.d.ts",
+      "import": "./dist/report.mjs"
+    }
+  },
   "description": "A spike to get uvu's core running inside the browser",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint:types": "./node_modules/.bin/tsc",
-    "lint:es": "eslint ./src",
-    "format": "prettier --write ./src"
+    "lint:es": "eslint ./src ./assert/src ./report/src ./test",
+    "format": "prettier --write ./src ./assert/src ./report/src ./test"
   },
   "repository": {
     "type": "git",

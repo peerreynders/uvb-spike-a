@@ -1,8 +1,8 @@
-import { Assertion } from './assert';
+import { Assertion } from '../../assert/src/index.js';
 const UVB_REPORT_READY = 'uvb-report:ready';
 
 /**
- * @typedef {import('./internal').Reporter} Reporter
+ * @typedef {import('../../src').Reporter} Reporter
  */
 
 const formatMs = new Intl.NumberFormat([], {
@@ -25,7 +25,7 @@ function transformTrace(trace) {
 }
 
 /**
- * @param {import('./internal').SuiteErrors[number]} suiteError
+ * @param {import('../../src').SuiteErrors[number]} suiteError
  * @returns {import('./internal').ReportError}
  */
 function transformSuiteError(suiteError) {
@@ -54,6 +54,40 @@ function transformSuiteError(suiteError) {
     stack,
   };
 }
+
+/**
+ * @param {string} id
+ * @returns {HTMLTemplateElement}
+ */
+function getTemplateById(id) {
+  const template = document.getElementById(id);
+  if (!(template instanceof HTMLTemplateElement))
+    throw new Error('${id} template not found');
+
+  return template;
+}
+
+const TEMPLATE_SUITE_ID = 'uvub-suite';
+
+/** @type {undefined | HTMLTemplateElement} */
+let suiteTemplate;
+
+/** @returns {HTMLTemplateElement} */
+const getSuiteTemplate = () =>
+  suiteTemplate
+    ? suiteTemplate
+    : (suiteTemplate = getTemplateById(TEMPLATE_SUITE_ID));
+
+const TEMPLATE_FAIL_ID = 'uvub-report-failure';
+
+/** @type {undefined | HTMLTemplateElement} */
+let failureTemplate;
+
+/** @returns {HTMLTemplateElement} */
+const getFailureTemplate = () =>
+  failureTemplate
+    ? failureTemplate
+    : (failureTemplate = getTemplateById(TEMPLATE_FAIL_ID));
 
 /**
  * @implements {Reporter}
@@ -86,7 +120,7 @@ class UvbReporter {
   }
 
   /**
-   * @param {import('./internal').SuiteErrors} errors
+   * @param {import('../../src').SuiteErrors} errors
    * @param {number} selected
    * @param {number} done
    * @param {number} skipped
@@ -122,7 +156,7 @@ class UvbReporter {
     this.scheduleRender();
   }
 
-  /** @param {import('./internal').EndResult} endResult */
+  /** @param {import('../../src').EndResult} endResult */
   result(endResult) {
     if (this.#report === undefined) return;
 
@@ -207,15 +241,8 @@ class UvbReporter {
  * @returns {[HTMLTableRowElement, import('./internal').SuiteRefs]}
  */
 function prepareSuite(name, suiteNo) {
-  const id = `suite${suiteNo}`;
-  const template = document.createElement('template');
-  template.innerHTML = `<tr>
-      <th id="${id}">${name}</th>
-      <td class="js-uvb-report-test-count" headers="${id}" >( / )</td>
-      <td class="js-uvb-report-test-indicator" headers="${id}" ></td>
-    </tr>`;
-
-  const root = template.content.firstChild;
+  const template = getSuiteTemplate();
+  const root = template.content.firstElementChild?.cloneNode(true);
   if (!(root instanceof HTMLTableRowElement))
     throw new Error('prepareSuite: Incorrect root type');
 
@@ -232,6 +259,13 @@ function prepareSuite(name, suiteNo) {
   ) {
     throw new Error('prepareSuite: Missing references');
   }
+
+  const id = `suite${suiteNo}`;
+
+  header.setAttribute('id', id);
+  header.textContent = name;
+  count.headers = id;
+  indicators.headers = id;
 
   return [
     root,
@@ -282,24 +316,40 @@ function updateSuiteResult(suite, selected, passed, skipped, errors) {
  * @returns {Element[]}
  */
 function renderTestFailure(name, suiteNo, failNo, message, operator) {
-  const id = `fail${failNo}`;
-  const suiteId = `suite${suiteNo}`;
-  const content = operator
-    ? `${message} <span class="uvb-report-operator">(${operator})</span>`
-    : message;
-  const template = document.createElement('template');
-  template.innerHTML = `<tbody>
-   <tr>
-     <th id="${id}">${name}</th>
-   <tr>
-   <tr>
-     <td class="uvb-report-fail-message" headers="${suiteId} ${id}" >${content}</td>
-   </tr>
-</tbody>`;
-
-  const root = template.content.firstChild;
+  const template = getFailureTemplate();
+  const root = template.content.firstElementChild?.cloneNode(true);
+  console.log(root);
   if (!(root instanceof HTMLTableSectionElement))
     throw new Error('renderTestFailure: Incorrect root type');
+
+  const header = root.querySelector('th');
+  const detail = root.querySelector('td');
+  const span = root.querySelector('span');
+
+  if (
+    !(
+      header instanceof HTMLTableCellElement &&
+      detail instanceof HTMLTableCellElement &&
+      span instanceof HTMLSpanElement
+    )
+  ) {
+    throw new Error('renderTestFailure: Missing references');
+  }
+
+  const id = `fail${failNo}`;
+  const suiteId = `suite${suiteNo}`;
+
+  header.setAttribute('id', id);
+  header.textContent = name;
+  detail.headers = `${suiteId} ${id}`;
+
+  if (operator) {
+    span.textContent = `(${operator})`;
+    const text = document.createTextNode(`${message} `);
+    span.parentNode?.insertBefore(text, span);
+  } else {
+    detail.textContent = message;
+  }
 
   return Array.from(root.children);
 }

@@ -1,5 +1,5 @@
-import { exec as execFn, suite, test as testFn } from '../uvb';
-import * as assert from '../uvb/assert';
+import { exec as execFn, suite, test as testFn } from '../src';
+import * as assert from '../assert/src';
 
 /** @type {(() => void)[]} */
 const suiteRuns = [];

@@ -1,5 +1,5 @@
-import { suite } from '../uvb';
-import * as assert from '../uvb/assert';
+import { suite } from '../src';
+import * as assert from '../assert/src';
 
 /** @type {(() => void)[]} */
 const suiteRuns = [];
@@ -24,7 +24,7 @@ const hooksContext = {
 const hooks = suite('hooks', hooksContext);
 
 /**
- * @param {import('../uvb/internal').State<HooksContext>} suiteState
+ * @param {import('../src/internal').State<HooksContext>} suiteState
  * @returns {HooksContext}
  */
 function pickHookStats(suiteState) {
@@ -33,7 +33,7 @@ function pickHookStats(suiteState) {
 }
 
 hooks.before(
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     assert.equal(pickHookStats(context), {
       before: 0,
@@ -46,7 +46,7 @@ hooks.before(
 );
 
 hooks.before.each(
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     const actual = pickHookStats(context);
     const expected = {
@@ -62,7 +62,7 @@ hooks.before.each(
 );
 
 hooks.after.each(
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     const actual = pickHookStats(context);
     const expected = {
@@ -78,7 +78,7 @@ hooks.after.each(
 );
 
 hooks.after(
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     const actual = pickHookStats(context);
     const expected = {
@@ -94,7 +94,7 @@ hooks.after(
 
 hooks(
   'test #1',
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     assert.equal(pickHookStats(context), {
       before: 1,
@@ -107,7 +107,7 @@ hooks(
 
 hooks(
   'test #2',
-  /** @param {import('../uvb/internal').State<HooksContext>} context */
+  /** @param {import('../src/internal').State<HooksContext>} context */
   (context) => {
     assert.equal(pickHookStats(context), {
       before: 1,
@@ -130,7 +130,7 @@ function hooksRunAndAfterHookTest() {
 
   hooks(
     'ensure after() ran',
-    /** @param {import('../uvb/internal').State<HooksContext>} context */
+    /** @param {import('../src/internal').State<HooksContext>} context */
     (context) => {
       assert.equal(pickHookStats(context), {
         before: 1,
@@ -164,14 +164,14 @@ const skipsContext = {
 const skips = suite('suite.skip()', skipsContext);
 
 skips.before.each(
-  /** @param {import('../uvb/internal').State<SkipsContext>} context */
+  /** @param {import('../src/internal').State<SkipsContext>} context */
   (context) => {
     context.beforeEach += 1;
   }
 );
 
 skips.after(
-  /** @param {import('../uvb/internal').State<SkipsContext>} context */
+  /** @param {import('../src/internal').State<SkipsContext>} context */
   (context) => {
     assert.is(context.done, 2, "Two tests were expected to run but didn't!");
   }
@@ -179,7 +179,7 @@ skips.after(
 
 skips(
   'normal #1: I should run',
-  /** @param {import('../uvb/internal').State<SkipsContext>} context */
+  /** @param {import('../src/internal').State<SkipsContext>} context */
   (context) => {
     assert.is(context.beforeEach, 1);
     context.done += 1;
@@ -188,7 +188,7 @@ skips(
 
 skips.skip(
   'literal',
-  /** @param {import('../uvb/internal').State<SkipsContext>} _context */
+  /** @param {import('../src/internal').State<SkipsContext>} _context */
   (_context) => {
     assert.unreachable('I should not run');
   }
@@ -196,7 +196,7 @@ skips.skip(
 
 skips(
   'normal #2: But I should',
-  /** @param {import('../uvb/internal').State<SkipsContext>} context */
+  /** @param {import('../src/internal').State<SkipsContext>} context */
   (context) => {
     assert.is(context.beforeEach, 2);
     context.done += 1;
@@ -223,14 +223,14 @@ const onlyContext = {
 const only = suite('suite.only()', onlyContext);
 
 only.before.each(
-  /** @param {import('../uvb/internal').State<OnlyContext>} context */
+  /** @param {import('../src/internal').State<OnlyContext>} context */
   (context) => {
     context.beforeEach += 1;
   }
 );
 
 only.after(
-  /** @param {import('../uvb/internal').State<OnlyContext>} context */
+  /** @param {import('../src/internal').State<OnlyContext>} context */
   (context) => {
     assert.is(context.done, 2, "Two tests were expected to run but didn't!");
   }
@@ -238,7 +238,7 @@ only.after(
 
 only(
   'normal',
-  /** @param {import('../uvb/internal').State<OnlyContext>} _context */
+  /** @param {import('../src/internal').State<OnlyContext>} _context */
   (_context) => {
     assert.unreachable('I should not run');
   }
@@ -246,7 +246,7 @@ only(
 
 only.skip(
   'modifier: skip',
-  /** @param {import('../uvb/internal').State<OnlyContext>} _context */
+  /** @param {import('../src/internal').State<OnlyContext>} _context */
   (_context) => {
     assert.unreachable("I shouldn't not run either");
   }
@@ -254,7 +254,7 @@ only.skip(
 
 only.only(
   'modifier only #1: I should run',
-  /** @param {import('../uvb/internal').State<OnlyContext>} context */
+  /** @param {import('../src/internal').State<OnlyContext>} context */
   (context) => {
     assert.is(context.beforeEach, 1, 'did not run normal or skipped tests');
     context.done += 1;
@@ -263,7 +263,7 @@ only.only(
 
 only.only(
   'modifier only #2: I should also run',
-  /** @param {import('../uvb/internal').State<OnlyContext>} context */
+  /** @param {import('../src/internal').State<OnlyContext>} context */
   (context) => {
     assert.is(context.beforeEach, 2, 'did not run normal or skipped tests');
     context.done += 1;
@@ -297,7 +297,7 @@ const context1Context = {
 const context1 = suite('context #1', context1Context);
 
 context1.before(
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     assert.is(context.stats, undefined);
     context.stats = {
@@ -310,7 +310,7 @@ context1.before(
 );
 
 context1.before.each(
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     // TypeScript needs the blatant conditional branch
     if (context.stats === undefined) {
@@ -331,7 +331,7 @@ context1.before.each(
 );
 
 context1.after.each(
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     if (context.stats === undefined) {
       assert.is.not(context.stats, undefined);
@@ -351,7 +351,7 @@ context1.after.each(
 );
 
 context1.after(
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     if (context.stats === undefined) {
       assert.is.not(context.stats, undefined);
@@ -371,7 +371,7 @@ context1.after(
 
 context1(
   'test #1',
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     if (context.stats === undefined) {
       assert.is.not(context.stats, undefined);
@@ -390,7 +390,7 @@ context1(
 
 context1(
   'test #2',
-  /** @param {import('../uvb/internal').State<Context1Context>} context */
+  /** @param {import('../src/internal').State<Context1Context>} context */
   (context) => {
     if (context.stats === undefined) {
       assert.is.not(context.stats, undefined);
@@ -419,7 +419,7 @@ function context1RunAndAfterHookTest() {
 
   context1(
     'ensure after() ran',
-    /** @param {import('../uvb/internal').State<Context1Context>} context */
+    /** @param {import('../src/internal').State<Context1Context>} context */
     (context) => {
       if (context.stats === undefined) {
         assert.is.not(context.stats, undefined);
@@ -463,7 +463,7 @@ const context2Context = {
 const context2 = suite('context #2', context2Context);
 
 /**
- * @param {import('../uvb/internal').State<Context2Context>} suiteState
+ * @param {import('../src/internal').State<Context2Context>} suiteState
  * @returns {Context2Context}
  */
 function pickContext2Stats(suiteState) {
@@ -472,7 +472,7 @@ function pickContext2Stats(suiteState) {
 }
 
 context2.before(
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     const actual = pickContext2Stats(context);
     const expected = {
@@ -487,7 +487,7 @@ context2.before(
 );
 
 context2.before.each(
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     const actual = pickContext2Stats(context);
     const expected = {
@@ -502,7 +502,7 @@ context2.before.each(
 );
 
 context2.after.each(
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     const actual = pickContext2Stats(context);
     const expected = {
@@ -517,7 +517,7 @@ context2.after.each(
 );
 
 context2.after(
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     assert.equal(pickContext2Stats(context), {
       before: 1,
@@ -532,7 +532,7 @@ context2.after(
 
 context2(
   'test #1',
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     assert.equal(pickContext2Stats(context), {
       before: 1,
@@ -545,7 +545,7 @@ context2(
 
 context2(
   'test #2',
-  /** @param {import('../uvb/internal').State<Context2Context>} context */
+  /** @param {import('../src/internal').State<Context2Context>} context */
   (context) => {
     assert.equal(pickContext2Stats(context), {
       before: 1,
@@ -568,7 +568,7 @@ function context2RunAndAfterHookTest() {
 
   context2(
     'ensure after() ran',
-    /** @param {import('../uvb/internal').State<Context2Context>} context */
+    /** @param {import('../src/internal').State<Context2Context>} context */
     (context) => {
       assert.equal(pickContext2Stats(context), {
         before: 1,
@@ -611,7 +611,7 @@ const context3 = suite('context #3', context3Context);
 
 context3(
   'should allow context modifications',
-  /** @param {import('../uvb/internal').State<Context3Context>} context */
+  /** @param {import('../src/internal').State<Context3Context>} context */
   (context) => {
     context.a += 1;
     assert.is(context.a, 2);
@@ -635,7 +635,7 @@ context3(
 
 context3(
   'should allow self-referencing instance(s) within context',
-  /** @param {import('../uvb/internal').State<Context3Context>} context */
+  /** @param {import('../src/internal').State<Context3Context>} context */
   (context) => {
     const { date, set, map } = context;
 
@@ -663,7 +663,7 @@ const breadcrumbsContext = {
 const breadcrumbs = suite('breadcrumbs', breadcrumbsContext);
 
 breadcrumbs.before(
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, '');
@@ -671,7 +671,7 @@ breadcrumbs.before(
 );
 
 breadcrumbs.before.each(
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, `test #${context.ordinal}`);
@@ -679,7 +679,7 @@ breadcrumbs.before.each(
 );
 
 breadcrumbs.after.each(
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, `test #${context.ordinal}`);
@@ -689,7 +689,7 @@ breadcrumbs.after.each(
 );
 
 breadcrumbs.after(
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, '');
@@ -698,7 +698,7 @@ breadcrumbs.after(
 
 breadcrumbs(
   'test #1',
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, 'test #1');
@@ -707,7 +707,7 @@ breadcrumbs(
 
 breadcrumbs(
   'test #2',
-  /** @param {import('../uvb/internal').State<BreadcrumbsContext>} context */
+  /** @param {import('../src/internal').State<BreadcrumbsContext>} context */
   (context) => {
     assert.is(context.__suite__, 'breadcrumbs');
     assert.is(context.__test__, 'test #2');

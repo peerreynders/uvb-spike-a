@@ -1,6 +1,6 @@
-import { suite } from '../uvb';
-import * as assert from '../uvb/assert';
-import * as diff from '../uvb/diff';
+import { suite } from '../src';
+import * as assert from '../assert/src';
+import * as diff from '../assert/src/diff';
 
 /** @type {(() => void)[]} */
 const suiteRuns = [];

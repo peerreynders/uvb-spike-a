@@ -1,10 +1,10 @@
-import { configure, exec } from './uvb';
-import { all as allUvb } from './tests/uvb';
-import { all as allSuite } from './tests/suite';
-import { all as allAssert } from './tests/assert';
-import { all as allDiff } from './tests/diff';
+import { configure, exec } from '../src';
+import { all as allUvb } from './uvb';
+import { all as allSuite } from './suite';
+import { all as allAssert } from './assert';
+import { all as allDiff } from './diff';
 
-import { UvbReport, UVB_REPORT_READY } from './uvb/uvb-report';
+import { UvbReport, UVB_REPORT_READY } from '../report/src';
 
 function reportReadyListener(event: Event): void {
   const reporter = (event.target as UvbReport).reporter;

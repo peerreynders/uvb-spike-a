@@ -6,7 +6,7 @@ import { diffArrays, diffChars, diffLines } from 'diff';
  * @template TNew
  * @param {TOld[]} actual
  * @param {TNew[]} expected
- * @returns {import('.').DiffArrays<TOld,TNew>}
+ * @returns {import('./internal').DiffArrays<TOld,TNew>}
  */
 function arrays(actual, expected) {
   return {
@@ -20,7 +20,7 @@ function arrays(actual, expected) {
  * @param {string} actual
  * @param {string} expected
  * @param {number} [lineNo]
- * @returns {import('.').DiffLines}
+ * @returns {import('./internal').DiffLines}
  */
 function lines(actual, expected, lineNo = 0) {
   return {
@@ -34,7 +34,7 @@ function lines(actual, expected, lineNo = 0) {
  * Difference strings
  * @param {string} actual
  * @param {string} expected
- * @returns {import('.').DiffChars}
+ * @returns {import('./internal').DiffChars}
  */
 function chars(actual, expected) {
   return {
@@ -47,7 +47,7 @@ function chars(actual, expected) {
  * Difference anything else
  * @param {unknown} actual
  * @param {unknown} expected
- * @returns {import('.').DiffDirect}
+ * @returns {import('./internal').DiffDirect}
  */
 function direct(actual, expected) {
   return {
@@ -281,7 +281,7 @@ function preferString(preferred, value) {
  * `actual` and `expected`
  * @param {unknown} actual
  * @param {unknown} expected
- * @returns {import('.').DiffArrays<unknown,unknown> | import('.').DiffLines | import('.').DiffChars | import('.').DiffDirect}
+ * @returns {import('./internal').DiffArrays<unknown,unknown> | import('./internal').DiffLines | import('./internal').DiffChars | import('./internal').DiffDirect}
  */
 function compare(actual, expected) {
   // Generate `arrays` difference when both are arrays

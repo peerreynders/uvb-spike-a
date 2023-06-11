@@ -8,6 +8,25 @@
   </head>
   <body>
     <uvb-report></uvb-report>
-    <script type="module" src="/src/main.ts"></script>
+		<template id="uvub-suite">
+      <tr>
+        <th></th>
+        <td class="js-uvb-report-test-count">( / )</td>
+        <td class="js-uvb-report-test-indicator"></td>
+      </tr>
+		</template>
+		<template id="uvub-report-failure">
+			<tbody>
+				<tr>
+     			<th></th>
+   			</tr>
+   			<tr>
+     			<td class="uvb-report-fail-message">
+						<span class="uvb-report-operator"></span>
+					</td>
+   			</tr>
+			</tbody>
+		</template>
+    <script type="module" src="test/tests.ts"></script>
   </body>
 </html>
