@@ -1,7 +1,6 @@
-import type { Handler, SuiteErrors, Reporter, EndResult } from './internal';
+import type { Handler } from './internal';
 
-// suite
-export import Handler = Handler;
+export type { Handler, SuiteErrors, Reporter, EndResult } from './internal';
 
 export type RegisterHook<U extends object = Record<string, never>> = (
   handler: Handler<U>
@@ -27,12 +26,6 @@ export type Suite<U extends object = Record<string, never>> = {
   after: RegisterHookTop<U>;
   run: () => void;
 };
-
-export import EndResult = EndResult;
-
-export import SuiteErrors = SuiteErrors;
-
-export import Reporter = Reporter;
 
 export type Configuration = {
   reporter: Reporter;

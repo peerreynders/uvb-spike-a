@@ -2,10 +2,10 @@ export const UVUB_REPORT_READY: string;
 
 export class UvubReport extends HTMLElement {
   constructor();
-  get reporter(): UvubReporter | undefined;
+  get reporter(): Reporter | undefined;
 }
 
 export class UvubReportReadyEvent extends CustomEvent {
-  constructor(element: UvuReport);
-  get reporter(): UvubReporter;
+  constructor(binder: unknown);
+  get reporter(): Reporter;
 }

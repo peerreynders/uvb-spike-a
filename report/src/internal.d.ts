@@ -1,3 +1,5 @@
+import { Reporter } from '../../src';
+
 export type ReportError = {
   suiteName: string;
   testName: string;
@@ -36,6 +38,7 @@ export type ReportEntry =
   | EntryEndResult;
 
 export type SuiteRefs = {
+  root: HTMLTableRowElement;
   header: HTMLTableCellElement;
   count: HTMLTableCellElement;
   indicators: HTMLTableCellElement;
@@ -44,6 +47,7 @@ export type SuiteRefs = {
 };
 
 export type SummaryRefs = {
+  root: HTMLTableElement;
   total: HTMLTableCellElement;
   passedRow: HTMLTableRowElement;
   passed: HTMLTableCellElement;
@@ -54,9 +58,31 @@ export type SummaryRefs = {
 
 export type ReportSummary = {
   withErrors: boolean;
-  withSkips: boolean;
+  withSkips: booleanh;
   total: string;
   passed: string;
   skipped: string;
   duration: string;
+};
+
+export type Binder = {
+  detach();
+  get reporter();
+};
+
+export type ReportBinder = {
+  resetSummary(): void;
+  renderSuiteStart(name): void;
+  renderSuiteTest(passed: boolean): void;
+  renderSuiteResult(
+    selected: number,
+    passed: number,
+    skipped: number,
+    errors: ReportError[]
+  ): void;
+  renderSummary(entry: ReportSummary): void;
+};
+
+export type UvubReporter = Reporter & {
+  detach();
 };

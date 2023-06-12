@@ -36,7 +36,7 @@ export type SuiteErrors = [
   suiteName: string
 ][];
 
-export interface Reporter {
+export type Reporter = {
   suiteStart: (name: string) => void;
   suiteResult: (
     errors: SuiteErrors,
@@ -49,7 +49,7 @@ export interface Reporter {
   result: (result: EndResult) => void;
   isAttached: () => boolean;
   onDetach: (handler: () => void) => void;
-}
+};
 
 export type RunResult = [
   done: number,
