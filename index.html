@@ -5,23 +5,164 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + TS</title>
+		<style>
+			:root {
+				--color-black: #000000;
+				--color-cyan: #00ffff;
+				--color-lime: #00ff00;
+				--color-orange: #ffa500;
+				--color-orange-dark: #ff4500;
+				--color-silver: #c0c0c0;
+				--color-red: #ff0000;
+				--color-white: #ffffff;
+				--color-off-white: #f3f4f4;
+				--font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+				--padding-fail: 2ch;
+			}
+			/* reset */
+			*,*::before,
+			*::after{
+				box-sizing:border-box
+			}
+
+			body,
+			h1,
+			h2,
+			h3,
+			h4,
+			p,
+			figure,
+			blockquote,
+			dl,
+			dd{
+				margin:0
+			}
+
+			ul[role="list"],
+			ol[role="list"]{
+				list-style:none
+			}
+
+			html:focus-within{
+				scroll-behavior:smooth
+			}
+
+			body{
+				min-height:100vh;
+				text-rendering:optimizeSpeed;
+				line-height:1.5
+			}
+
+			a:not([class]){
+				text-decoration-skip-ink:auto
+			}
+
+			img,picture{
+				max-width:100%;
+				display:block
+			}
+
+			input,
+			button,
+			textarea,
+			select{
+				font:inherit
+			}
+
+			@media(prefers-reduced-motion:reduce){
+				html:focus-within{
+					scroll-behavior:auto
+				}
+				*,
+				*::before,
+				*::after{
+					animation-duration:.01ms !important;
+					animation-iteration-count:1 !important;
+					transition-duration:.01ms !important;
+					scroll-behavior:auto !important
+				}
+			}	
+			/* end reset */
+			body {
+				font-family: var(--font-mono);
+				color: var(--color-white);
+				background-color: var(--color-black);
+			}
+
+			table {
+  			border-collapse: collapse;		
+				margin: 0 auto;
+			}
+
+			th {
+				text-align: left;
+			}
+
+      th[id^=suite] {
+				color: var(--color-silver);
+				border-top: 1px solid var(--color-black);
+			}
+
+      th[id^=fail] {
+				padding-left: var(--padding-fail);
+				color: var(--color-orange);
+				font-weight: bold;
+				font-style: italic;
+			}
+
+			td.uvb-report-fail-message {
+				padding-left: var(--padding-fail);
+				color: var(--color-red);
+			}
+
+			td.uvb-report-error-stack {
+				padding-left: var(--padding-fail);
+				color: var(--color-orange);
+			}
+
+			td.uvb-report-test-indicator {
+				padding-left: 1ch;
+				color: var(--color-silver);
+			}
+
+			.uvb-report-fail-indicator {
+				color: var(--color-red);
+			}
+
+			.uvb-report-test-count {
+				padding-left: 1ch;
+				text-align: left;
+			}
+
+			.uvb-report--pass {
+				color: var(--color-lime);
+			}
+
+			.uvb-report--skip {
+				color: var(--color-cyan);
+			}
+
+			.uvb-report--fail {
+				color: var(--color-red);
+			}
+		</style>
   </head>
   <body>
     <uvub-report></uvub-report>
     <template id="uvub-report-suite">
       <tr>
         <th></th>
-        <td class="js-uvb-report-test-count">( / )</td>
-        <td class="js-uvb-report-test-indicator"></td>
+        <td class="uvb-report-test-count js-uvb-report-test-count">( / )</td>
+        <td class="uvb-report-test-indicator js-uvb-report-test-indicator"></td>
       </tr>
     </template>
     <template id="uvub-report-failure">
       <tbody>
         <tr>
-          <th></th>
+          <th colspan="3"></th>
         </tr>
         <tr>
-          <td class="uvb-report-fail-message">
+          <td class="uvb-report-fail-message" colspan="3">
             <span class="uvb-report-operator"></span>
           </td>
         </tr>
@@ -29,7 +170,7 @@
     </template>
 		<template id="uvub-report-error">
 			<tr>
-    		<td class="uvb-report-error-stack">
+    		<td class="uvb-report-error-stack" colspan="3">
       		<pre></pre>
      		</td>
    		</tr>
@@ -39,19 +180,19 @@
         <tbody>
           <tr>
             <th id="total">Total</th>
-            <td class="js-uvb-report-total" headers="total"></td>
+            <td class="js-uvb-report-total" headers="total" colspan="2"></td>
           </tr>
           <tr>
             <th id="passed">Passed</th>
-            <td class="js-uvb-report-passed" headers="passed"></td>
+            <td class="js-uvb-report-passed" headers="passed" colspan="2"></td>
           </tr>
           <tr>
             <th id="skipped">Skipped</th>
-            <td class="js-uvb-report-skipped" headers="skipped"></td>
+            <td class="js-uvb-report-skipped" headers="skipped" colspan="2"></td>
           </tr>
           <tr>
             <th id="duration">Duration</th>
-            <td class="js-uvb-report-duration" headers="duration"></td>
+            <td class="js-uvb-report-duration" headers="duration" colspan="2"></td>
           </tr>
         </tbody>
       </table>

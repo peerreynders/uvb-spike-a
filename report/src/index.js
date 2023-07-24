@@ -261,13 +261,39 @@ function prepareSuite(name, suiteNo) {
   };
 }
 
+const TEST_PASS = '\u2022'; // U+2022 Bullet
+const TEST_FAIL = '\u2718'; // U+2718 Heavy Ballot X
+
+/** @type {(part: string) => string} */
+const renderIndicatorPart = part => 
+	part.startsWith(TEST_FAIL) ? `<span class="uvb-report-fail-indicator">${part}</span>` : part;
+
 /**
  * @param {import('./internal').SuiteRefs} suite
  * @param {boolean} passed
  */
 function updateSuiteTest(suite, passed) {
-  suite.outcomes.push(passed ? '•' : '✘');
-  const indicators = suite.outcomes.join(' ');
+  suite.outcomes.push(passed ? TEST_PASS : TEST_FAIL);
+
+  /** @type {string[]} */
+  const parts = [];
+	let lastResult = ' ';
+	for(let i = 0; i < suite.outcomes.length; i += 1) {
+		const result = suite.outcomes[i];
+		if (result === lastResult) {
+			parts[parts.length - 1] = parts[parts.length - 1] + ' ' + result; 
+			continue;
+		}
+
+		lastResult = result;
+		parts.push(result);
+	}
+
+  let indicators = renderIndicatorPart(parts[0]);
+	for(let i = 1; i < parts.length; i += 1) {
+		indicators += ' ' + renderIndicatorPart(parts[i]);
+	}
+
   suite.indicators.innerHTML = indicators;
 }
 
@@ -295,13 +321,13 @@ let failureTemplate;
 
 /**
  * @param {string} name
- * @param {number} suiteNo
  * @param {number} failNo
+ * @param {string} suiteId
  * @param {string} message
  * @param {string} operator
  * @returns {Element[]}
  */
-function renderTestFailure(name, suiteNo, failNo, message, operator) {
+function renderTestFailure(name, failNo, suiteId, message, operator) {
   if (!failureTemplate) {
     const element = getTemplateById(TEMPLATE_FAIL_ID).content.firstElementChild;
 
@@ -331,7 +357,7 @@ function renderTestFailure(name, suiteNo, failNo, message, operator) {
 
   header.textContent = name;
   header.setAttribute('id', id);
-  data.headers = `suite${suiteNo} ${id}`;
+  data.headers = `${suiteId} ${id}`;
 
   if (operator) {
     span.textContent = `(${operator})`;
@@ -349,12 +375,12 @@ const TEMPLATE_ERROR_ID = 'uvub-report-error';
 let errorTemplate;
 
 /**
- * @param {number} suiteNo
  * @param {number} failNo
+ * @param {string} suiteId
  * @param {string} stack
  * @returns {HTMLTableRowElement}
  */
-function renderErrorStack(suiteNo, failNo, stack) {
+function renderErrorStack(failNo, suiteId, stack) {
   if (!errorTemplate) {
     const element =
       getTemplateById(TEMPLATE_ERROR_ID).content.firstElementChild;
@@ -375,7 +401,7 @@ function renderErrorStack(suiteNo, failNo, stack) {
     throw new Error('renderErrorStack: Missing references');
   }
 
-  data.headers = `suite${suiteNo} fail${failNo}`;
+  data.headers = `${suiteId} fail${failNo}`;
   pre.textContent = stack;
   return root;
 }
@@ -509,15 +535,15 @@ function makeBinder(replaceWith) {
       for (const error of errors) {
         const rows = renderTestFailure(
           error.testName,
-          suiteNo,
           failNo,
+					suite.id,
           error.message,
           error.operator
         );
         summary.tbody.append(...rows);
 
         if (error.stack) {
-          const stackRow = renderErrorStack(suiteNo, failNo, error.stack);
+          const stackRow = renderErrorStack(failNo, suite.id, error.stack);
           summary.tbody.append(stackRow);
         }
 

@@ -1,6 +1,6 @@
 import type { Handler } from './internal';
 
-export type { Handler, SuiteErrors, Reporter, EndResult } from './internal';
+export type { Handler, EndResult, Reporter, SuiteErrors, State } from './internal';
 
 export type RegisterHook<U extends object = Record<string, never>> = (
   handler: Handler<U>
